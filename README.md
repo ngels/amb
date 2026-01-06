@@ -20,6 +20,23 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+Environment variables
+---------------------
+
+This project reads the public base URL from an environment file named `.env` at the repository root. Create or update `.env` with the following key:
+
+```dotenv
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+```
+
+You can copy the example file:
+
+```bash
+cp .env.example .env
+```
+
+When running locally, restart the dev server after changing `.env`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
