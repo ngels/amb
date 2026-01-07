@@ -61,6 +61,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'message.forgotPasswordError':
       'Failed to send reset link. Please try again.',
     'message.requestFailed': 'Request failed',
+
+    // Dashboard
+    'dashboard.identification': 'Identification',
+    'identification.commencer': 'New',
+    'identification.voirTout':'see All',
+    'dashboard.welcome':'Welcome to your dashboard.',
+    'dashboard.title':'Dashboard',
+
+    // sign out
+    'auth.signout_confirm': 'Are you sure you want to sign out?',
+    'auth.signout': 'Sign out'
   },
   fr: {
     // General
@@ -124,6 +135,17 @@ export const translations: Record<Language, Record<string, string>> = {
     'message.forgotPasswordError':
       'Échec de l\'envoi du lien de réinitialisation. Veuillez réessayer.',
     'message.requestFailed': 'La demande a échoué',
+
+    // Dashboard
+    'dashboard.identification': 'Identification',
+    'identification.commencer': 'Commencer',
+    'identification.voirTout':'Voir tout',
+    'dashboard.welcome':'Bienvenue sur votre tableau de bord.',
+    'dashboard.title':'Tableau de bord',
+
+    // sign out
+    'auth.signout_confirm': 'Êtes-vous sûr de vouloir vous déconnecter?',
+    'auth.signout': 'Déconnexion'
   },
 };
 

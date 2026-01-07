@@ -15,8 +15,39 @@ export default function DashboardPage() {
     // redirect to sign-in. Adjust endpoint as needed on backend.
     const checkAuth = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/auth/me`, { credentials: 'include' });
+        const headers: Record<string, string> = {};
+        try {
+          if (typeof window !== 'undefined') {
+            // Prefer accessToken (JWT) over loginToken
+            const accessToken = localStorage.getItem('accessToken');
+            if (accessToken) {
+              headers['Authorization'] = `Bearer ${accessToken}`;
+            } else {
+              // Fallback to loginToken
+              const login = localStorage.getItem('loginToken');
+              if (login) headers['x-login-token'] = login;
+            }
+          }
+        } catch (e) {}
+
+        const res = await fetch(`${BASE_URL}/auth/me`, {
+          credentials: 'include',
+          headers,
+        });
+
         if (!res.ok) {
+          router.replace('/signin');
+          return;
+        }
+
+        // Optionally validate response shape (expecting id, name, email)
+        try {
+          const body = await res.json();
+          const user = body?.data || body;
+          if (!user || (!user.id && !user.email && !user.name)) {
+            router.replace('/signin');
+          }
+        } catch (e) {
           router.replace('/signin');
         }
       } catch (e) {
@@ -30,8 +61,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <DashboardNav />
       <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">{t('dashboard.title') || 'Dashboard'}</h1>
-        <p className="text-sm text-gray-600">{t('dashboard.welcome') || 'Welcome to your dashboard.'}</p>
+        <h1 className="text-2xl font-bold mb-4">{t('dashboard.title')}</h1>
+        <p className="text-sm text-gray-600">{t('dashboard.welcome')}</p>
       </main>
     </div>
   );

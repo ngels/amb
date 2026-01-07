@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/src/i18n/useTranslation';
+import { signout } from '@/src/services/authService';
 
 export const DashboardNav: React.FC = () => {
   const { t } = useTranslation();
@@ -33,7 +34,7 @@ export const DashboardNav: React.FC = () => {
           onClick={() => setOpen((s) => !s)}
           className="px-3 py-2 bg-blue-600 text-white rounded-md"
         >
-          {t('dashboard.identification') || 'Identification'}
+          {t('dashboard.identification')}
         </button>
 
         {open && (
@@ -42,14 +43,33 @@ export const DashboardNav: React.FC = () => {
               onClick={() => go('/dashboard/identification/commencer')}
               className="w-full text-left px-4 py-2 hover:bg-gray-100"
             >
-              {t('identification.commencer') || 'Commencer'}
+              {t('identification.commencer')}
             </button>
             <button
               onClick={() => go('/dashboard/identification/voir-tout')}
               className="w-full text-left px-4 py-2 hover:bg-gray-100"
             >
-              {t('identification.voirTout') || 'Voir tout'}
+              {t('identification.voirTout')}
             </button>
+              <div className="border-t mt-2" />
+              <button
+                onClick={async () => {
+                  setOpen(false)
+                  const confirmed = window.confirm(
+                    t('auth.signout_confirm')
+                  );
+                  if (!confirmed) return;
+                  try {
+                    await signout();
+                  } catch (e) {
+                    // ignore errors, still navigate to sign-in
+                  }
+                  router.replace('/signin');
+                }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+              >
+                {t('auth.signout')}
+              </button>
           </div>
         )}
       </div>

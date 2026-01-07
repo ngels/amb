@@ -66,7 +66,6 @@ export default function SignUpPage() {
     setSuccessMessage('');
 
     try {
-      console.log('Submitting signup form with values:', values);
       const response = await postJson('/auth/signup/email', values);
       
       if (response.status === 'fail' && response.data?.message) {
