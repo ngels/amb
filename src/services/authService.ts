@@ -104,6 +104,7 @@ export async function signout() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('loginToken');
+      localStorage.removeItem('userPermissions');
     }
   } catch (e) {
     // ignore storage errors

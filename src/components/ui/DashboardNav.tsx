@@ -1,24 +1,58 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/src/i18n/useTranslation';
+import { LanguageSwitcher } from '@/src/components/LanguageSwitcher';
 import { signout } from '@/src/services/authService';
+
+const parseStoredPermissions = (value: string | null): string | null => {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      const first = parsed[0];
+      return typeof first === 'string' ? first : null;
+    }
+    if (typeof parsed === 'string') return parsed;
+    if (typeof parsed === 'object' && parsed !== null) {
+      const maybeRole = (parsed as Record<string, any>).role || (parsed as Record<string, any>).name;
+      return typeof maybeRole === 'string' ? maybeRole : null;
+    }
+  } catch (e) {
+    // Ignore JSON parse errors and treat as plain string
+  }
+  return value;
+};
 
 export const DashboardNav: React.FC = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [permissions, setPermissions] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener('click', onDocClick);
-    return () => document.removeEventListener('click', onDocClick);
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const storedPermissions = parseStoredPermissions(localStorage.getItem('userPermissions'));
+      if (storedPermissions) {
+        setPermissions(storedPermissions);
+      }
+    } catch (err) {
+      console.error('Error reading permissions from storage', err);
+    }
   }, []);
 
   const go = (path: string) => {
@@ -26,52 +60,76 @@ export const DashboardNav: React.FC = () => {
     router.push(path);
   };
 
+  const toggleMenu = () => {
+    try {
+      const raw = typeof window !== 'undefined' ? localStorage.getItem('userPermissions') : null;
+      const parsed = parseStoredPermissions(raw);
+      setPermissions(parsed);
+    } catch (err) {
+      console.error('Error refreshing permissions', err);
+    }
+    setOpen((prev) => !prev);
+  };
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    const confirmed = window.confirm(t('auth.signout_confirm'));
+    if (!confirmed) return;
+    try {
+      await signout();
+    } catch (err) {
+      // ignore signout errors
+    }
+    router.replace('/signin');
+  };
+
   return (
     <nav className="w-full bg-white border-b py-3 px-4 flex items-center justify-between">
-      <div className="text-lg font-semibold">Dashboard</div>
-      <div className="relative" ref={ref}>
+      <div className="flex items-center gap-3">
+        <Image src="/amb_vers.png" alt="AMB" width={120} height={40} priority />
         <button
-          onClick={() => setOpen((s) => !s)}
-          className="px-3 py-2 bg-blue-600 text-white rounded-md"
+          onClick={() => router.push('/dashboard')}
+          className="text-lg font-semibold cursor-pointer hover:text-blue-600"
         >
-          {t('dashboard.identification')}
+          AMB
         </button>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="relative" ref={ref}>
+          <button
+            onClick={toggleMenu}
+            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium border-0"
+          >
+            {t('dashboard.identification')}
+          </button>
 
-        {open && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
-            <button
-              onClick={() => go('/dashboard/identification/commencer')}
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-            >
-              {t('identification.commencer')}
-            </button>
-            <button
-              onClick={() => go('/dashboard/identification/voir-tout')}
-              className="w-full text-left px-4 py-2 hover:bg-gray-100"
-            >
-              {t('identification.voirTout')}
-            </button>
+          {open && (
+            <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
+              <button
+                onClick={() => go('/dashboard/identification/commencer')}
+                className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100"
+              >
+                {t('identification.commencer')}
+              </button>
+              {permissions && permissions !== 'user' && (
+                <button
+                  onClick={() => go('/dashboard/identification/voir-tout')}
+                  className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100"
+                >
+                  {t('identification.voirTout')}
+                </button>
+              )}
               <div className="border-t mt-2" />
               <button
-                onClick={async () => {
-                  setOpen(false)
-                  const confirmed = window.confirm(
-                    t('auth.signout_confirm')
-                  );
-                  if (!confirmed) return;
-                  try {
-                    await signout();
-                  } catch (e) {
-                    // ignore errors, still navigate to sign-in
-                  }
-                  router.replace('/signin');
-                }}
+                onClick={handleSignOut}
                 className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
               >
                 {t('auth.signout')}
               </button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+        <LanguageSwitcher />
       </div>
     </nav>
   );

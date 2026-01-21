@@ -1,0 +1,40 @@
+/**
+ * Country telephonic codes for phone number formatting
+ * Format: { label: string; code: string }
+ */
+
+export const COUNTRY_PHONE_CODES = [
+  { label: 'D.R.Congo (+243)', code: '+243' },
+  { label: 'Rwanda (+250)', code: '+250' },
+  { label: 'Uganda (+256)', code: '+256' },
+  { label: 'Tanzania (+255)', code: '+255' },
+  { label: 'Kenya (+254)', code: '+254' },
+  { label: 'Burundi (+257)', code: '+257' },
+  { label: 'South Sudan (+211)', code: '+211' },
+  { label: 'Sudan (+249)', code: '+249' },
+  { label: 'Ethiopia (+251)', code: '+251' },
+  { label: 'Zimbabwe (+263)', code: '+263' },
+  { label: 'Zambia (+260)', code: '+260' },
+  { label: 'Malawi (+265)', code: '+265' },
+  { label: 'Mozambique (+258)', code: '+258' },
+  { label: 'Angola (+244)', code: '+244' },
+  { label: 'Ivory Coast (+225)', code: '+225' },
+  { label: 'Cameroon (+237)', code: '+237' },
+  { label: 'Gabon (+241)', code: '+241' },
+  { label: 'Republic of Congo (+242)', code: '+242' },
+  { label: 'Central African Republic (+236)', code: '+236' },
+  { label: 'Nigeria (+234)', code: '+234' },
+  { label: 'Ghana (+233)', code: '+233' },
+  { label: 'Senegal (+221)', code: '+221' },
+  { label: 'Mali (+223)', code: '+223' },
+  { label: 'Mauritania (+222)', code: '+222' },
+  { label: 'Madagascar (+261)', code: '+261' },
+  { label: 'Comoros (+269)', code: '+269' },
+  { label: 'Mauritius (+230)', code: '+230' },
+  { label: 'South Africa (+27)', code: '+27' },
+  { label: 'Egypt (+20)', code: '+20' },
+  { label: 'Morocco (+212)', code: '+212' },
+  { label: 'Algeria (+213)', code: '+213' },
+  { label: 'Tunisia (+216)', code: '+216' },
+  { label: 'Libya (+218)', code: '+218' },
+];

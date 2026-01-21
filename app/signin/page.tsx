@@ -45,6 +45,17 @@ export default function SignInPage() {
         setErrorMessage(response.data.message);
       } else {
         setSuccessMessage(t('message.signinSuccess'));
+        try {
+          if (typeof window !== 'undefined') {
+            if (response?.data?.permissions) {
+              localStorage.setItem('userPermissions', response.data.permissions);
+            } else {
+              localStorage.removeItem('userPermissions');
+            }
+          }
+        } catch (e) {
+          // ignore localStorage errors
+        }
         router.push('/dashboard');
       }
     } catch (err: any) {
