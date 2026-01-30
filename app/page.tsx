@@ -3,7 +3,7 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] font-sans">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-[#f5f5f5] sm:items-start">
+      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-start py-32 px-16 bg-[#f5f5f5] sm:items-start">
         <div className="w-full rounded-3xl bg-[#f5f5f5] p-10 flex justify-start">
           <Image
             src="/amb_vers.png"
@@ -36,9 +36,9 @@ export default function Home() {
             pour y acceder , enfin d &apos; enregistrer votre profile citoyen 
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+        <div className="mt-auto flex w-full flex-col gap-4 pt-12 text-base font-medium sm:flex-row">
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background text-center transition-colors hover:bg-[#383838] md:w-[158px]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background text-center transition-colors hover:bg-[#383838] whitespace-nowrap md:w-[158px]"
             href="/signin"
             rel="noopener noreferrer"
           >
@@ -51,7 +51,7 @@ export default function Home() {
             Se connecter
           </a>
           <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 text-center transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px]"
+            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 text-center transition-colors hover:border-transparent hover:bg-black/[.04] whitespace-nowrap md:w-[158px]"
             href="/signup"
             rel="noopener noreferrer"
           >

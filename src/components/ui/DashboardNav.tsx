@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { LanguageSwitcher } from '@/src/components/LanguageSwitcher';
@@ -31,7 +31,18 @@ export const DashboardNav: React.FC = () => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [permissions, setPermissions] = useState<string | null>(null);
+  const [profileCompletion, setProfileCompletion] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
+
+  const syncProfileCompletion = useCallback(() => {
+    try {
+      const completionValue = typeof window !== 'undefined' ? localStorage.getItem('profileCompleteStatus') : null;
+      setProfileCompletion(completionValue);
+    } catch (err) {
+      console.error('Error reading profile completion from storage', err);
+      setProfileCompletion(null);
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,6 +56,8 @@ export const DashboardNav: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+   
     try {
       const storedPermissions = parseStoredPermissions(localStorage.getItem('userPermissions'));
       if (storedPermissions) {
@@ -53,7 +66,25 @@ export const DashboardNav: React.FC = () => {
     } catch (err) {
       console.error('Error reading permissions from storage', err);
     }
-  }, []);
+    syncProfileCompletion();
+  }, [syncProfileCompletion]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleCustomEvent = () => syncProfileCompletion();
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === 'profileCompleteStatus') {
+        syncProfileCompletion();
+      }
+    };
+
+    window.addEventListener('profile-completion-changed', handleCustomEvent as EventListener);
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('profile-completion-changed', handleCustomEvent as EventListener);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [syncProfileCompletion]);
 
   const go = (path: string) => {
     setOpen(false);
@@ -68,8 +99,17 @@ export const DashboardNav: React.FC = () => {
     } catch (err) {
       console.error('Error refreshing permissions', err);
     }
+    syncProfileCompletion();
     setOpen((prev) => !prev);
   };
+  const isNormalUser = permissions === 'user';
+  const shouldShowContinue = isNormalUser && (profileCompletion === '0' || profileCompletion === '2');
+  const shouldDisableStart =
+    isNormalUser && ['1', '3', '4'].includes(profileCompletion ?? '');
+  const identificationStartLabel = shouldShowContinue
+    ? t('identification.continuer') || 'Continuer'
+    : t('identification.commencer');
+
 
   const handleSignOut = async () => {
     setOpen(false);
@@ -107,9 +147,10 @@ export const DashboardNav: React.FC = () => {
             <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50">
               <button
                 onClick={() => go('/dashboard/identification/commencer')}
-                className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100"
+                disabled={shouldDisableStart}
+                className="w-full text-left px-4 py-2 text-gray-900 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
-                {t('identification.commencer')}
+                {identificationStartLabel}
               </button>
               {permissions && permissions !== 'user' && (
                 <button

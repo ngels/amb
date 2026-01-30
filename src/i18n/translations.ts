@@ -65,10 +65,14 @@ export const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     'dashboard.identification': 'Identification',
     'identification.commencer': 'New',
+    'identification.continuer': 'Continue',
     'identification.voirTout':'see All',
     'dashboard.welcome':'Welcome to your dashboard.',
     'dashboard.title':'Home',
     'dashboard.completedProfiles':'Special Identification Form :',
+    'dashboard.collapseView.expand': 'Expand view',
+    'dashboard.collapseView.collapse': 'Collapse view',
+    'dashboard.viewFullProfile': 'View Full Profile',
 
     // Profile Summary
     'profile.summary.title': 'Profile Summary',
@@ -164,6 +168,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.next': 'Next',
     'identification.fieldRequired': 'This field is required',
     'identification.requiredFieldsMissing': 'Please fill in all required fields',
+    'identification.submitDisabled': 'Submission is disabled for the current profile status.',
 
     // sign out
     'auth.signout_confirm': 'Are you sure you want to sign out?',
@@ -235,10 +240,14 @@ export const translations: Record<Language, Record<string, string>> = {
     // Dashboard
     'dashboard.identification': 'Identification',
     'identification.commencer': 'Commencer',
+    'identification.continuer': 'Continuer',
     'identification.voirTout':'Voir tout',
     'dashboard.welcome':'Bienvenue sur votre tableau de bord.',
     'dashboard.title':'Accueil',
     'dashboard.completedProfiles':'Fiche d\'identification spéciale :',
+    'dashboard.collapseView.expand': 'Déplier la vue',
+    'dashboard.collapseView.collapse': 'Réduire la vue',
+    'dashboard.viewFullProfile': 'Voir le profil complet',
 
     // Profile Summary
     'profile.summary.title': 'Résumé du profil',
@@ -334,6 +343,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.next': 'Suivant',
     'identification.fieldRequired': 'Ce champ est requis',
     'identification.requiredFieldsMissing': 'Veuillez remplir tous les champs obligatoires',
+    'identification.submitDisabled': 'La soumission est désactivée pour ce statut de profil.',
 
     // sign out
     'auth.signout_confirm': 'Êtes-vous sûr de vouloir vous déconnecter?',

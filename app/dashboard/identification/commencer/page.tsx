@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
@@ -419,6 +419,13 @@ export default function CommencerPage() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<Set<string>>(new Set());
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string | null>(null);
+  const [profileCompletion, setProfileCompletion] = useState<string | null>(null);
+
+  const submitDisabledCopy =
+    t('identification.submitDisabled') || 'Submission is disabled for the current profile status.';
+  const isNormalUser = permissions === 'user';
+  const shouldDisableSubmit =
+    isNormalUser && ['1', '3', '4'].includes(profileCompletion ?? '');
 
   const getCachedEditingProfile = () => {
     if (typeof window === 'undefined') return null;
@@ -430,6 +437,19 @@ export default function CommencerPage() {
     }
   };
 
+  const syncProfileCompletion = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setProfileCompletion(null);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem('profileCompleteStatus');
+      setProfileCompletion(stored);
+    } catch (e) {
+      setProfileCompletion(null);
+    }
+  }, []);
+
   useEffect(() => {
     try {
       const stored = typeof window !== 'undefined' ? localStorage.getItem('userPermissions') : null;
@@ -438,6 +458,28 @@ export default function CommencerPage() {
       setPermissions(null);
     }
   }, []);
+
+  useEffect(() => {
+    syncProfileCompletion();
+  }, [syncProfileCompletion]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleCustom = () => syncProfileCompletion();
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key || event.key === 'profileCompleteStatus') {
+        syncProfileCompletion();
+      }
+    };
+
+    window.addEventListener('profile-completion-changed', handleCustom as EventListener);
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('profile-completion-changed', handleCustom as EventListener);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [syncProfileCompletion]);
 
   const populateFormFromProfile = (profile: any) => {
     if (!profile) return;
@@ -520,6 +562,21 @@ export default function CommencerPage() {
       gp_maternal_gm_province: profile.grandmere_mere?.province || profile.gp_maternal_gf_province || '',
       gp_maternal_gm_country: profile.grandmere_mere?.country || profile.gp_maternal_gm_country || '',
     }));
+
+    const completionRaw = profile?.complete ?? profile?.status ?? null;
+    const normalizedCompletion =
+      completionRaw === undefined || completionRaw === null ? null : String(completionRaw);
+    setProfileCompletion(normalizedCompletion);
+    if (typeof window !== 'undefined') {
+      try {
+        if (normalizedCompletion === null) {
+          localStorage.removeItem('profileCompleteStatus');
+        } else {
+          localStorage.setItem('profileCompleteStatus', normalizedCompletion);
+        }
+        window.dispatchEvent(new Event('profile-completion-changed'));
+      } catch (e) {}
+    }
   };
 
   useEffect(() => {
@@ -621,6 +678,11 @@ export default function CommencerPage() {
     // Validate current step
     if (!validateStep(currentStep)) {
       setError(t('identification.requiredFieldsMissing') || 'Please fill in all required fields.');
+      return;
+    }
+
+    if (currentStep === 6 && shouldDisableSubmit) {
+      setError(submitDisabledCopy);
       return;
     }
 
@@ -743,6 +805,11 @@ export default function CommencerPage() {
   };
 
   const handleFinalSave = async () => {
+    if (shouldDisableSubmit) {
+      setError(submitDisabledCopy);
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
@@ -854,6 +921,7 @@ export default function CommencerPage() {
   };
 
   const currentStepData = STEPS[currentStep - 1];
+  const isFinalStepLocked = currentStep === 6 && shouldDisableSubmit;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1023,12 +1091,16 @@ export default function CommencerPage() {
                 </button>
                 <button
                   onClick={handleFinalSave}
-                  disabled={isLoading}
-                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                  disabled={isLoading || shouldDisableSubmit}
+                  title={shouldDisableSubmit ? submitDisabledCopy : undefined}
+                  className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? t('identification.saving') || 'Saving...' : 'Soumettre'}
                 </button>
               </div>
+              {shouldDisableSubmit && (
+                <p className="mt-2 text-sm text-red-600 text-right">{submitDisabledCopy}</p>
+              )}
             </div>
           ) : (
             /* Form Step */
@@ -1224,7 +1296,8 @@ export default function CommencerPage() {
 
                 <button
                   onClick={handleNext}
-                  disabled={isLoading}
+                  disabled={isLoading || isFinalStepLocked}
+                  title={isFinalStepLocked ? submitDisabledCopy : undefined}
                   className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading
@@ -1234,6 +1307,9 @@ export default function CommencerPage() {
                       : t('identification.next') || 'Next'}
                 </button>
               </div>
+              {isFinalStepLocked && (
+                <p className="text-sm text-red-600 text-right mt-2">{submitDisabledCopy}</p>
+              )}
             </div>
           )}
         </div>

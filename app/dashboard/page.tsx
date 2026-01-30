@@ -9,6 +9,7 @@ import { BASE_URL } from '@/config';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { ProfileView } from '@/src/components/profile/ProfileView';
 import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument';
+import { CollapsibleView } from '@/src/components/ui/CollapsibleView';
 import {
   coerceProfileStatus,
   getProfileStatusLabel,
@@ -59,6 +60,9 @@ const resolveProfileStatus = (profile: Profile): ProfileStatusValue => {
   }
   return 'incomplete';
 };
+
+const composeFullName = (first?: string | null, last?: string | null) =>
+  [first, last].filter(Boolean).join(' ').trim();
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -203,8 +207,23 @@ export default function DashboardPage() {
     fetchProfiles();
   }, [permissions, permissionsResolved, requestedViewId]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const completionValue = fullProfileData?.complete;
+    if (completionValue === undefined || completionValue === null) {
+      localStorage.removeItem('profileCompleteStatus');
+    } else {
+      localStorage.setItem('profileCompleteStatus', String(completionValue));
+    }
+    window.dispatchEvent(new Event('profile-completion-changed'));
+  }, [fullProfileData?.complete]);
+
   const handlePrintPdf = useCallback(async () => {
     if (!fullProfileData || isGeneratingPdf) return;
+    const completeValue = Number(fullProfileData.complete);
+    if (Number.isNaN(completeValue) || (completeValue !== 3 && completeValue !== 4)) {
+      return;
+    }
 
     setError(null);
     try {
@@ -364,6 +383,10 @@ export default function DashboardPage() {
     router.replace('/dashboard');
   };
 
+  const printableCompleteValue = Number(fullProfileData?.complete);
+  const isProfilePrintable =
+    !Number.isNaN(printableCompleteValue) && (printableCompleteValue === 3 || printableCompleteValue === 4);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <DashboardNav />
@@ -414,13 +437,14 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={handlePrintPdf}
-                disabled={isGeneratingPdf}
+                disabled={isGeneratingPdf || !isProfilePrintable}
                 className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isGeneratingPdf
                   ? t('profile.summary.preparingPdf') || 'Preparing PDF...'
                   : t('profile.summary.print') || 'Print Profile'}
               </button>
+              
             </div>
           </div>
         ) : (
@@ -467,64 +491,50 @@ export default function DashboardPage() {
             )}
 
             {searchResult && (
-              <div className="mb-4 border rounded-lg bg-white shadow-sm">
-                <button
-                  onClick={() => setSearchExpanded((s) => !s)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
-                >
-                  <div className="text-left">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {searchResult.firstName} {searchResult.lastName}
-                    </h3>
-                    <p className="text-sm text-gray-600">{searchResult.email}</p>
+              <CollapsibleView
+                className="mb-4"
+                title={
+                  composeFullName(searchResult.firstName, searchResult.lastName) ||
+                  searchResult.email ||
+                  t('profile.summary.notProvided') ||
+                  'Profile'
+                }
+                subtitle={searchResult.email || undefined}
+                isOpen={searchExpanded}
+                onToggle={() => setSearchExpanded((s) => !s)}
+              >
+                <div className="grid grid-cols-2 gap-4 py-4 text-sm">
+                  <div>
+                    <p className="text-gray-600 font-medium">
+                      {t('profile.summary.firstName') || 'First Name'}
+                    </p>
+                    <p className="text-gray-900 mt-1">{searchResult.firstName || 'N/A'}</p>
                   </div>
-                  <svg
-                    className={`w-6 h-6 text-gray-600 transition-transform ${
-                      searchExpanded ? 'rotate-180' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <div>
+                    <p className="text-gray-600 font-medium">
+                      {t('profile.summary.lastName') || 'Last Name'}
+                    </p>
+                    <p className="text-gray-900 mt-1">{searchResult.lastName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 font-medium">
+                      {t('profile.summary.email') || 'Email'}
+                    </p>
+                    <p className="text-gray-900 mt-1">{searchResult.email || 'N/A'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-4 border-t">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openProfileInline(searchResult._id || searchResult.id || null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
-                  </svg>
-                </button>
-
-                {searchExpanded && (
-                  <div className="px-4 pb-4 border-t bg-gray-50">
-                    <div className="grid grid-cols-2 gap-4 py-4 text-sm">
-                      <div>
-                        <p className="text-gray-600 font-medium">First Name</p>
-                        <p className="text-gray-900 mt-1">{searchResult.firstName || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 font-medium">Last Name</p>
-                        <p className="text-gray-900 mt-1">{searchResult.lastName || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600 font-medium">Email</p>
-                        <p className="text-gray-900 mt-1">{searchResult.email || 'N/A'}</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-3 pt-4 border-t">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openProfileInline(searchResult._id || searchResult.id || null);
-                        }}
-                        className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      >
-                        View Full Profile
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                    {t('dashboard.viewFullProfile') || 'View Full Profile'}
+                  </button>
+                </div>
+              </CollapsibleView>
             )}
 
             {isLoading ? (
@@ -544,82 +554,74 @@ export default function DashboardPage() {
                 {profiles.map((profile) => {
                   const statusValue = resolveProfileStatus(profile);
                   const statusLabel = getProfileStatusLabel(statusValue, t);
+                  const profileKey = profile._id || profile.id || null;
+                  const fullName =
+                    composeFullName(profile.firstName, profile.lastName) ||
+                    profile.email ||
+                    t('profile.summary.notProvided') ||
+                    'Profile';
 
                   return (
-                    <div key={profile._id || profile.id} className="border rounded-lg bg-white shadow-sm">
-                      <button
-                        onClick={() => {
-                          const idKey = profile._id || profile.id;
-                          setExpandedProfileId(expandedProfileId === idKey ? null : idKey || null);
-                        }}
-                        className="w-full flex items-center justify-between p-4 hover:bg-gray-50"
-                      >
-                        <div className="text-left">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {profile.firstName} {profile.lastName}
-                          </h3>
-                          <p className="text-sm text-gray-600">{profile.email}</p>
+                    <CollapsibleView
+                      key={profile._id || profile.id}
+                      title={fullName}
+                      subtitle={profile.email || undefined}
+                      isOpen={expandedProfileId === (profile._id || profile.id)}
+                      onToggle={() => {
+                        setExpandedProfileId(expandedProfileId === profileKey ? null : profileKey);
+                      }}
+                    >
+                      <div className="grid grid-cols-2 gap-4 py-4 text-sm">
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.firstName') || 'First Name'}
+                          </p>
+                          <p className="text-gray-900 mt-1">{profile.firstName || 'N/A'}</p>
                         </div>
-                        <svg
-                          className={`w-6 h-6 text-gray-600 transition-transform ${
-                            expandedProfileId === (profile._id || profile.id) ? 'rotate-180' : ''
-                          }`}
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.lastName') || 'Last Name'}
+                          </p>
+                          <p className="text-gray-900 mt-1">{profile.lastName || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.email') || 'Email'}
+                          </p>
+                          <p className="text-gray-900 mt-1">{profile.email || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.dateOfBirth') || 'Date of Birth'}
+                          </p>
+                          <p className="text-gray-900 mt-1">{profile.dateOfBirth || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.gender') || 'Gender'}
+                          </p>
+                          <p className="text-gray-900 mt-1">{profile.gender || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600 font-medium">
+                            {t('profile.summary.status') || 'Status'}
+                          </p>
+                          <p className="text-green-600 font-semibold mt-1">{statusLabel}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 pt-4 border-t">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openProfileInline(profile._id || profile.id || null);
+                          }}
+                          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                          />
-                        </svg>
-                      </button>
-
-                      {expandedProfileId === (profile._id || profile.id) && (
-                        <div className="px-4 pb-4 border-t bg-gray-50">
-                          <div className="grid grid-cols-2 gap-4 py-4 text-sm">
-                            <div>
-                              <p className="text-gray-600 font-medium">First Name</p>
-                              <p className="text-gray-900 mt-1">{profile.firstName || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 font-medium">Last Name</p>
-                              <p className="text-gray-900 mt-1">{profile.lastName || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 font-medium">Email</p>
-                              <p className="text-gray-900 mt-1">{profile.email || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 font-medium">Date of Birth</p>
-                              <p className="text-gray-900 mt-1">{profile.dateOfBirth || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 font-medium">Gender</p>
-                              <p className="text-gray-900 mt-1">{profile.gender || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-600 font-medium">Status</p>
-                              <p className="text-green-600 font-semibold mt-1">{statusLabel}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex gap-3 pt-4 border-t">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openProfileInline(profile._id || profile.id || null);
-                              }}
-                              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                            >
-                              View Full Profile
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                          {t('dashboard.viewFullProfile') || 'View Full Profile'}
+                        </button>
+                      </div>
+                    </CollapsibleView>
                   );
                 })}
               </div>
