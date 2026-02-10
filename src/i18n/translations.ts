@@ -97,6 +97,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.feedbackHistory.toggle': 'Expand or collapse feedback history',
     'dashboard.feedbackHistory.unknownDate': 'Date unavailable',
     'dashboard.feedbackHistory.reviewer': 'Reviewer',
+    'dashboard.openMenu': 'Open menu',
 
     // Profile Summary
     'profile.summary.title': 'Profile Summary',
@@ -299,6 +300,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'dashboard.feedbackHistory.toggle': "Afficher ou masquer l’historique des retours",
     'dashboard.feedbackHistory.unknownDate': 'Date indisponible',
     'dashboard.feedbackHistory.reviewer': 'Relecteur',
+    'dashboard.openMenu': 'Ouvrir le menu',
 
     // Profile Summary
     'profile.summary.title': 'Résumé du profil',

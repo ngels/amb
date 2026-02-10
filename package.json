@@ -9,7 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@react-pdf/renderer": "^4.3.2",
+    "antd": "^6.3.0",
     "countries-list": "^3.2.2",
     "country-telephone-data": "^0.6.3",
     "formik": "^2.4.5",
