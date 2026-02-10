@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { updateProfile, getProfile, getProfileById } from '@/src/services/profileService';
 import { COUNTRY_PHONE_CODES } from '@/src/constants/countryCodes';
+import { PROVINCE_OPTIONS, getTerritoryOptions } from '@/src/constants/provinces';
+import { SUBJECT_QUALITY_OPTIONS } from '@/src/constants/subjectQuality';
 import { useAuth } from '@/src/hooks/useAuth';
 import { ArrowBackButton } from '@/src/components/ui/ArrowBackButton';
 
@@ -23,6 +25,7 @@ interface FormData {
   group: string;
   sector: string;
   district: string;
+  territory: string;
   province: string;
   nationality: string;
   maritalStatus: string;
@@ -38,6 +41,8 @@ interface FormData {
   phone_country_code: string;
   phone_number: string;
   email: string;
+  picture: string;
+  type_of_profile: string;
   // Step 5 - Block 1 (Paternal Grandparents) - Section 1 (Grandfather)
   gp_paternal_gf_names: string;
   gp_paternal_gf_givenName: string;
@@ -78,30 +83,60 @@ interface FormData {
 
 interface FieldConfig {
   name: keyof FormData;
-  type: 'text' | 'datepicker' | 'select';
+  type: 'text' | 'datepicker' | 'select' | 'file';
   labelKey: string;
   required: boolean;
   helperKey?: string;
   options?: { label: string; value: string }[];
   condition?: (formData: FormData) => boolean; // Function to determine if field should be visible
+  accept?: string;
 }
+
+const MAX_PICTURE_SIZE_BYTES = 250 * 1024; // 250 KB
+const ALLOWED_PICTURE_MIME_TYPES = ['image/jpeg', 'image/png'];
+const PICTURE_UPLOAD_ENDPOINT = '/api/profile-picture-upload';
+const getFieldDisplayValue = (fieldConfig: FieldConfig, data: FormData) => {
+  const value = data[fieldConfig.name];
+  if (!value) return '';
+  if (fieldConfig.type === 'select' && fieldConfig.options) {
+    const matched = fieldConfig.options.find((option) => option.value === value);
+    return matched?.label || value;
+  }
+  return value;
+};
 
 const STEPS = [
   {
     number: 1,
     titleKey: 'identification.step1.title',
     fields: [
+      {
+        name: 'type_of_profile',
+        type: 'select',
+        labelKey: 'identification.step1.subjectQuality',
+        helperKey: 'identification.step1.subjectQualityHelper',
+        required: true,
+        options: SUBJECT_QUALITY_OPTIONS,
+      },
       { name: 'firstName', type: 'text', labelKey: 'identification.step1.firstName', required: true },
       { name: 'givenName', type: 'text', labelKey: 'identification.step1.givenName', required: false, helperKey: 'identification.step1.givenNameHelper' },
-      { name: 'lastName', type: 'text', labelKey: 'identification.step1.lastName', required: false },
+      { name: 'lastName', type: 'text', labelKey: 'identification.step1.lastName', required: false },  
+      {
+        name: 'picture',
+        type: 'file',
+        labelKey: 'identification.step1.picture',
+        required: false,
+        helperKey: 'identification.step1.pictureHelper',
+        accept: '.jpg,.jpeg,.png',
+      },
       {
         name: 'gender',
         type: 'select',
         labelKey: 'identification.step1.gender',
         required: true,
         options: [
-          { label: 'Female (Femme)', value: 'F' },
-          { label: 'Male (Homme)', value: 'M' },
+          { label: 'Feminin (Female)', value: 'F' },
+          { label: 'Masculin (Male)', value: 'M' },
         ],
       },
       {
@@ -129,12 +164,6 @@ const STEPS = [
     number: 2,
     titleKey: 'identification.step2.title',
     fields: [
-      { name: 'tribe', type: 'text', labelKey: 'identification.step2.tribe', required: false },
-      { name: 'villageOfOrigin', type: 'text', labelKey: 'identification.step2.villageOfOrigin', required: false },
-      { name: 'group', type: 'text', labelKey: 'identification.step2.group', required: false },
-      { name: 'sector', type: 'text', labelKey: 'identification.step2.sector', required: false },
-      { name: 'district', type: 'text', labelKey: 'identification.step2.district', required: false },
-      { name: 'province', type: 'text', labelKey: 'identification.step2.province', required: false },
       {
         name: 'nationality',
         type: 'select',
@@ -143,10 +172,28 @@ const STEPS = [
         options: [
           { label: 'Originaire', value: 'originaire' },
           { label: 'Naturalisé(e)', value: 'naturaliser' },
-          { label: 'OPT', value: 'opt' },
+          // { label: 'OPT', value: 'opt' },
           { label: 'Adoptive', value: 'adoptive' },
         ],
       },
+      {
+        name: 'province',
+        type: 'select',
+        labelKey: 'identification.step2.province',
+        required: false,
+        options: PROVINCE_OPTIONS,
+      },
+      {
+        name: 'territory',
+        type: 'select',
+        labelKey: 'identification.step2.territory',
+        required: false,
+      },
+      { name: 'district', type: 'text', labelKey: 'identification.step2.district', required: false },
+      { name: 'group', type: 'text', labelKey: 'identification.step2.group', required: false },
+      { name: 'sector', type: 'text', labelKey: 'identification.step2.sector', required: false },
+      { name: 'villageOfOrigin', type: 'text', labelKey: 'identification.step2.villageOfOrigin', required: false },
+      { name: 'tribe', type: 'text', labelKey: 'identification.step2.tribe', required: false },
     ] as FieldConfig[],
   },
   {
@@ -364,6 +411,7 @@ export default function CommencerPage() {
     group: '',
     sector: '',
     district: '',
+    territory: '',
     province: '',
     nationality: '',
     maritalStatus: '',
@@ -379,6 +427,8 @@ export default function CommencerPage() {
     phone_country_code: '+243',
     phone_number: '',
     email: '',
+    picture: '',
+    type_of_profile: '',
     // Step 5 fields
     gp_paternal_gf_names: '',
     gp_paternal_gf_givenName: '',
@@ -420,6 +470,17 @@ export default function CommencerPage() {
   const [currentProfileId, setCurrentProfileId] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string | null>(null);
   const [profileCompletion, setProfileCompletion] = useState<string | null>(null);
+  const [pictureUploading, setPictureUploading] = useState(false);
+  const [pictureError, setPictureError] = useState<string | null>(null);
+  const [picturePreviewUrl, setPicturePreviewUrl] = useState<string | null>(null);
+  const picturePreviewUrlRef = useRef<string | null>(null);
+  const clearPicturePreview = useCallback(() => {
+    if (picturePreviewUrlRef.current) {
+      URL.revokeObjectURL(picturePreviewUrlRef.current);
+      picturePreviewUrlRef.current = null;
+    }
+    setPicturePreviewUrl(null);
+  }, []);
 
   const submitDisabledCopy =
     t('identification.submitDisabled') || 'Submission is disabled for the current profile status.';
@@ -458,6 +519,12 @@ export default function CommencerPage() {
       setPermissions(null);
     }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      clearPicturePreview();
+    };
+  }, [clearPicturePreview]);
 
   useEffect(() => {
     syncProfileCompletion();
@@ -514,8 +581,10 @@ export default function CommencerPage() {
       group: profile.group || '',
       sector: profile.sector || '',
       district: profile.district || '',
+      territory: profile.territory || '',
       province: profile.province || '',
       nationality: profile.nationality || '',
+      type_of_profile: profile.type_of_profile ? String(profile.type_of_profile) : '',
       maritalStatus: profile.maritalStatus || '',
       spouse: profile.spouse || '',
       level_of_education: profile.level_of_education || '',
@@ -529,6 +598,7 @@ export default function CommencerPage() {
       phone_country_code: phoneCountryCode,
       phone_number: phoneNumber,
       email: profile.email || '',
+      picture: profile.picture || '',
       gp_paternal_gf_names: profile.grandpere_pere?.first_name || profile.gp_paternal_gf_names || '',
       gp_paternal_gf_givenName: profile.grandpere_pere?.given_name || profile.gp_paternal_gf_givenName || '',
       gp_paternal_gf_group: profile.grandpere_pere?.group || profile.gp_paternal_gf_group || '',
@@ -562,6 +632,9 @@ export default function CommencerPage() {
       gp_maternal_gm_province: profile.grandmere_mere?.province || profile.gp_maternal_gf_province || '',
       gp_maternal_gm_country: profile.grandmere_mere?.country || profile.gp_maternal_gm_country || '',
     }));
+
+    clearPicturePreview();
+    setPictureError(null);
 
     const completionRaw = profile?.complete ?? profile?.status ?? null;
     const normalizedCompletion =
@@ -614,8 +687,7 @@ export default function CommencerPage() {
           console.log('No existing profile found');
         }
       } catch (e) {
-        console.error('Failed to load profile data:', e);
-        setError('Failed to load profile data.');
+        console.log('Error loading profile:', e);
       }
     };
 
@@ -623,16 +695,87 @@ export default function CommencerPage() {
   }, [profileIdParam, permissions]);
 
   const handleInputChange = (fieldName: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [fieldName]: value,
+      };
+
+      if (fieldName === 'province') {
+        const availableTerritories = getTerritoryOptions(value).map((opt) => opt.value);
+        if (prev.territory && !availableTerritories.includes(prev.territory)) {
+          updated.territory = '';
+        }
+      }
+
+      return updated;
+    });
     // Clear error for this field if it was previously missing
     setMissingRequiredFields((prev) => {
       const newSet = new Set(prev);
       newSet.delete(fieldName);
       return newSet;
     });
+  };
+
+  const handlePictureClear = () => {
+    clearPicturePreview();
+    setPictureError(null);
+    handleInputChange('picture', '');
+  };
+
+  const handlePictureFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_PICTURE_MIME_TYPES.includes(file.type)) {
+      setPictureError(
+        t('identification.step1.pictureFormatError') || 'Only JPG and PNG images are allowed.',
+      );
+      event.target.value = '';
+      clearPicturePreview();
+      handleInputChange('picture', '');
+      return;
+    }
+
+    if (file.size > MAX_PICTURE_SIZE_BYTES) {
+      setPictureError(t('identification.step1.pictureSizeError') || 'Image must be 250 KB or smaller.');
+      event.target.value = '';
+      clearPicturePreview();
+      handleInputChange('picture', '');
+      return;
+    }
+
+    clearPicturePreview();
+    const previewUrl = URL.createObjectURL(file);
+    picturePreviewUrlRef.current = previewUrl;
+    setPicturePreviewUrl(previewUrl);
+    setPictureUploading(true);
+    setPictureError(null);
+
+    try {
+      const payload = new globalThis.FormData();
+      payload.append('file', file);
+      const response = await fetch(PICTURE_UPLOAD_ENDPOINT, {
+        method: 'POST',
+        body: payload,
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body?.error || 'Failed to upload picture.');
+      }
+      if (!body?.path) {
+        throw new Error('Upload completed but no file path was returned.');
+      }
+      handleInputChange('picture', body.path);
+    } catch (uploadErr: any) {
+      clearPicturePreview();
+      handleInputChange('picture', '');
+      setPictureError(uploadErr?.message || 'Failed to upload picture.');
+    } finally {
+      setPictureUploading(false);
+      event.target.value = '';
+    }
   };
 
   const validateStep = (stepNumber: number): boolean => {
@@ -681,6 +824,11 @@ export default function CommencerPage() {
       return;
     }
 
+    if (pictureUploading) {
+      setError(t('identification.step1.pictureUploading') || 'Please wait for the picture upload to finish.');
+      return;
+    }
+
     if (currentStep === 6 && shouldDisableSubmit) {
       setError(submitDisabledCopy);
       return;
@@ -707,8 +855,10 @@ export default function CommencerPage() {
       if (formData.group) dataToSave.group = formData.group;
       if (formData.sector) dataToSave.sector = formData.sector;
       if (formData.district) dataToSave.district = formData.district;
+      if (formData.territory) dataToSave.territory = formData.territory;
       if (formData.province) dataToSave.province = formData.province;
       if (formData.nationality) dataToSave.nationality = formData.nationality;
+      if (formData.type_of_profile) dataToSave.type_of_profile = Number(formData.type_of_profile);
       if (formData.maritalStatus) dataToSave.maritalStatus = formData.maritalStatus;
       if (formData.spouse) dataToSave.spouse = formData.spouse;
       if (formData.level_of_education) dataToSave.level_of_education = formData.level_of_education;
@@ -723,6 +873,7 @@ export default function CommencerPage() {
         dataToSave.phone_number = formData.phone_number;
       }
       if (formData.email) dataToSave.email = formData.email;
+      if (formData.picture) dataToSave.picture = formData.picture;
       
       // Step 5 fields - Transform to nested structure for API
       // grandpere_pere = gp_paternal_gf (Paternal Grandfather)
@@ -810,6 +961,11 @@ export default function CommencerPage() {
       return;
     }
 
+    if (pictureUploading) {
+      setError(t('identification.step1.pictureUploading') || 'Please wait for the picture upload to finish.');
+      return;
+    }
+
     setError(null);
     setIsLoading(true);
 
@@ -831,8 +987,10 @@ export default function CommencerPage() {
       if (formData.group) dataToSave.group = formData.group;
       if (formData.sector) dataToSave.sector = formData.sector;
       if (formData.district) dataToSave.district = formData.district;
+      if (formData.territory) dataToSave.territory = formData.territory;
       if (formData.province) dataToSave.province = formData.province;
       if (formData.nationality) dataToSave.nationality = formData.nationality;
+      if (formData.type_of_profile) dataToSave.type_of_profile = Number(formData.type_of_profile);
       if (formData.maritalStatus) dataToSave.maritalStatus = formData.maritalStatus;
       if (formData.spouse) dataToSave.spouse = formData.spouse;
       if (formData.level_of_education) dataToSave.level_of_education = formData.level_of_education;
@@ -847,6 +1005,7 @@ export default function CommencerPage() {
         dataToSave.phone_number = formData.phone_number;
       }
       if (formData.email) dataToSave.email = formData.email;
+      if (formData.picture) dataToSave.picture = formData.picture;
       
       // Step 5 fields - Transform to nested structure for API
       // grandpere_pere = gp_paternal_gf (Paternal Grandfather)
@@ -1018,7 +1177,7 @@ export default function CommencerPage() {
                                           </p>
                                           <p className="text-gray-900 mt-1">
                                             {formData[fieldConfig.name] ? (
-                                              <span className="font-semibold">{formData[fieldConfig.name]}</span>
+                                              <span className="font-semibold">{getFieldDisplayValue(fieldConfig, formData)}</span>
                                             ) : (
                                               <span className="text-gray-400 italic">{t('profile.summary.notProvided') || 'Not provided'}</span>
                                             )}
@@ -1035,13 +1194,42 @@ export default function CommencerPage() {
                       ) : (
                         // For steps with regular fields
                         <div className="grid grid-cols-2 gap-6 text-sm">
-                          {(step as any).fields?.map((fieldConfig: FieldConfig) => {
+                          {step.number === 1 && (
+                            <div className="col-span-2">
+                              <p className="text-gray-600 font-medium">
+                                {t('identification.step1.picture') || 'Profile picture'}
+                              </p>
+                              {formData.picture ? (
+                                <div className="mt-3 flex flex-col items-start justify-center">
+                                  {(picturePreviewUrl || (formData.picture?.startsWith('http') ? formData.picture : null)) ? (
+                                    <img
+                                      src={picturePreviewUrl || (formData.picture?.startsWith('http') ? formData.picture : undefined)}
+                                      alt={t('identification.step1.picturePreviewAlt') || 'Profile picture preview'}
+                                      className="h-32 w-32 rounded-md object-cover shadow"
+                                    />
+                                  ) : (
+                                    <div className="h-32 w-32 rounded-md border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-500 flex items-center justify-center text-center p-2">
+                                      {t('identification.step1.pictureNoPreview') || 'Preview unavailable'}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="mt-2 text-gray-400 italic">
+                                  {t('profile.summary.notProvided') || 'Not provided'}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          {(step as any).fields?.map((fieldConfig: FieldConfig, index: number) => {
                             // Skip conditional fields if condition not met
                             if (fieldConfig.condition && !fieldConfig.condition(formData)) {
                               return null;
                             }
                             // Skip phone_number in favor of combined display
                             if (fieldConfig.name === 'phone_number') {
+                              return null;
+                            }
+                            if (fieldConfig.name === 'picture') {
                               return null;
                             }
                             return (
@@ -1051,7 +1239,7 @@ export default function CommencerPage() {
                                 </p>
                                 <p className="text-gray-900 mt-1">
                                   {formData[fieldConfig.name] ? (
-                                    <span className="font-semibold">{formData[fieldConfig.name]}</span>
+                                    <span className="font-semibold">{getFieldDisplayValue(fieldConfig, formData)}</span>
                                   ) : (
                                     <span className="text-gray-400 italic">{t('profile.summary.notProvided') || 'Not provided'}</span>
                                   )}
@@ -1067,7 +1255,7 @@ export default function CommencerPage() {
                               </p>
                               <p className="text-gray-900 mt-1">
                                 {formData.phone_number ? (
-                                  <span className="font-semibold">{formData.phone_country_code}{formData.phone_number}</span>
+                                    <span className="font-semibold">{formData.phone_country_code}{formData.phone_number}</span>
                                 ) : (
                                   <span className="text-gray-400 italic">{t('profile.summary.notProvided') || 'Not provided'}</span>
                                 )}
@@ -1166,6 +1354,66 @@ export default function CommencerPage() {
                     return null;
                   }
 
+                  if (fieldConfig.name === 'picture') {
+                    return (
+                      <div
+                        key={fieldConfig.name}
+                        className="rounded-lg border border-dashed border-gray-300 bg-gray-50/70 p-4"
+                      >
+                        <label className="block text-sm font-medium text-gray-800">
+                          {t(fieldConfig.labelKey)}
+                        </label>
+                        <p className="mt-1 text-xs text-gray-500">
+                          {t(fieldConfig.helperKey) || 'Upload a JPG or PNG image under 250 KB. The stored file path will be sent to the API.'}
+                        </p>
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                          <input
+                            type="file"
+                            accept={fieldConfig.accept || 'image/jpeg,image/png'}
+                            onChange={handlePictureFileChange}
+                            disabled={pictureUploading}
+                            className="text-sm text-gray-700 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-700 disabled:file:bg-gray-400 disabled:file:cursor-not-allowed"
+                          />
+                          {formData.picture && (
+                            <button
+                              type="button"
+                              onClick={handlePictureClear}
+                              className="rounded border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                              disabled={pictureUploading}
+                            >
+                              {t('identification.step1.pictureRemove') || 'Remove photo'}
+                            </button>
+                          )}
+                          {pictureUploading && (
+                            <span className="text-sm text-gray-500">
+                              {t('identification.step1.pictureUploading') || 'Uploading...'}
+                            </span>
+                          )}
+                        </div>
+                        {picturePreviewUrl && (
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold text-gray-600 mb-2">
+                              {t('identification.step1.picturePreview') || 'Preview'}
+                            </p>
+                            <img
+                              src={picturePreviewUrl}
+                              alt={t('identification.step1.picturePreviewAlt') || 'Selected profile picture preview'}
+                              className="h-32 w-32 rounded object-cover shadow"
+                            />
+                          </div>
+                        )}
+                        {!picturePreviewUrl && formData.picture && (
+                          <p className="mt-4 text-xs text-gray-600 break-words">
+                            {t('identification.step1.pictureSavedPath') || 'Saved file path'}: {formData.picture}
+                          </p>
+                        )}
+                        {pictureError && (
+                          <p className="mt-2 text-xs text-red-600">{pictureError}</p>
+                        )}
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={fieldConfig.name}>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1187,24 +1435,42 @@ export default function CommencerPage() {
                           }`}
                         />
                       ) : fieldConfig.type === 'select' ? (
-                        <select
-                          value={formData[fieldConfig.name]}
-                          onChange={(e) =>
-                            handleInputChange(fieldConfig.name, e.target.value)
-                          }
-                          className={`w-full px-4 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                            missingRequiredFields.has(fieldConfig.name)
-                              ? 'border-red-500 bg-red-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <option value="">{t('identification.selectPlaceholder') || 'Select...'}</option>
-                          {fieldConfig.options?.map((opt, idx) => (
-                            <option key={`${fieldConfig.name}-opt-${opt.value || idx}`} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
+                        (() => {
+                          const isTerritoryField = fieldConfig.name === 'territory';
+                          const territoryOptions = isTerritoryField ? getTerritoryOptions(formData.province) : [];
+                          const selectOptions = (isTerritoryField ? territoryOptions : fieldConfig.options) || [];
+                          const defaultPlaceholder = t('identification.selectPlaceholder') || 'Select...';
+                          const selectPlaceholder = isTerritoryField
+                            ? !formData.province
+                              ? t('identification.step2.selectProvinceFirst') || 'Select a province first'
+                              : selectOptions.length === 0
+                                ? t('identification.step2.noTerritories') || 'No territories available for this province'
+                                : defaultPlaceholder
+                            : defaultPlaceholder;
+                          const isSelectDisabled = isTerritoryField && (!formData.province || selectOptions.length === 0);
+
+                          return (
+                            <select
+                              value={formData[fieldConfig.name]}
+                              onChange={(e) =>
+                                handleInputChange(fieldConfig.name, e.target.value)
+                              }
+                              disabled={isSelectDisabled}
+                              className={`w-full px-4 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                                missingRequiredFields.has(fieldConfig.name)
+                                  ? 'border-red-500 bg-red-50'
+                                  : 'border-gray-300'
+                              } ${isSelectDisabled ? 'bg-gray-100 text-gray-500' : ''}`}
+                            >
+                              <option value="">{selectPlaceholder}</option>
+                              {selectOptions.map((opt, idx) => (
+                                <option key={`${fieldConfig.name}-opt-${opt.value || idx}`} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()
                       ) : fieldConfig.name === 'phone_number' ? (
                         // Special handling for phone number with country code selector
                         <div>
@@ -1224,7 +1490,10 @@ export default function CommencerPage() {
                                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                               >
                                 {COUNTRY_PHONE_CODES.map((country) => (
-                                  <option key={country.code} value={country.code}>
+                                  <option
+                                    key={`${country.iso2 || country.code}-${country.code}`}
+                                    value={country.code}
+                                  >
                                     {country.label}
                                   </option>
                                 ))}
@@ -1296,8 +1565,14 @@ export default function CommencerPage() {
 
                 <button
                   onClick={handleNext}
-                  disabled={isLoading || isFinalStepLocked}
-                  title={isFinalStepLocked ? submitDisabledCopy : undefined}
+                  disabled={isLoading || isFinalStepLocked || pictureUploading}
+                  title={
+                    isFinalStepLocked
+                      ? submitDisabledCopy
+                      : pictureUploading
+                        ? t('identification.step1.pictureUploading') || 'Picture upload in progress'
+                        : undefined
+                  }
                   className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading

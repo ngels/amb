@@ -1,3 +1,5 @@
+import { subjectQualityLabel } from '@/src/constants/subjectQuality';
+
 export type ProfileSummaryField = {
   name: string;
   labelKey: string;
@@ -18,6 +20,11 @@ export const PROFILE_SUMMARY_SECTIONS: ProfileSummarySection[] = [
       { name: 'firstName', labelKey: 'identification.step1.firstName' },
       { name: 'givenName', labelKey: 'identification.step1.givenName' },
       { name: 'lastName', labelKey: 'identification.step1.lastName' },
+      {
+        name: 'type_of_profile',
+        labelKey: 'identification.step1.subjectQuality',
+        valueGetter: (profile) => subjectQualityLabel(profile?.type_of_profile) || profile?.type_of_profile || null,
+      },
       { name: 'gender', labelKey: 'identification.step1.gender' },
       { name: 'bloodType', labelKey: 'identification.step1.bloodType' },
       { name: 'nsi', labelKey: 'identification.step1.nsi' },

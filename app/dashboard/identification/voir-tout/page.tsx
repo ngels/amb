@@ -7,6 +7,13 @@ import { useTranslation } from '@/src/i18n/useTranslation';
 import { useAuth } from '@/src/hooks/useAuth';
 import { BASE_URL } from '@/config';
 import { getProfileById } from '@/src/services/profileService';
+import {
+  coerceProfileStatus,
+  getProfileStatusLabel,
+  PROFILE_STATUS_OPTIONS,
+  PROFILE_STATUS_RANKED_VALUES,
+  ProfileStatusValue,
+} from '@/src/constants/profileStatuses';
 
 const normalizePermissions = (value: any): string | null => {
   if (!value) return null;
@@ -27,6 +34,27 @@ const normalizePermissions = (value: any): string | null => {
     return typeof maybeRole === 'string' ? maybeRole : null;
   }
   return null;
+};
+
+const resolveProfileStatus = (profile: any): ProfileStatusValue => {
+  const rawStatus = profile?.status ?? profile?.complete;
+  const coerced = coerceProfileStatus(rawStatus);
+  return coerced ?? 'incomplete';
+};
+
+const getStatusBadgeClasses = (status: ProfileStatusValue): string => {
+  switch (status) {
+    case 'complete':
+      return 'bg-green-100 text-green-700';
+    case 'complete_with_remark':
+      return 'bg-indigo-100 text-indigo-700';
+    case 'under_review':
+      return 'bg-blue-100 text-blue-700';
+    case 'change_requested':
+      return 'bg-orange-100 text-orange-800';
+    default:
+      return 'bg-yellow-100 text-yellow-800';
+  }
 };
 
 const PAGE_SIZE = 10;
@@ -88,6 +116,7 @@ export default function VoirToutPage() {
   const [editingRowId, setEditingRowId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('firstName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [statusFilter, setStatusFilter] = useState<'all' | ProfileStatusValue>('all');
 
   useEffect(() => {
     try {
@@ -163,6 +192,13 @@ export default function VoirToutPage() {
           sortOrder,
         });
 
+        if (statusFilter !== 'all') {
+          const completionIndex = PROFILE_STATUS_RANKED_VALUES.indexOf(statusFilter);
+          if (completionIndex >= 0) {
+            params.append('complete', String(completionIndex));
+          }
+        }
+
         const res = await fetch(`${BASE_URL}/profile/filledBy/all?${params.toString()}`, {
           credentials: 'include',
           headers,
@@ -189,7 +225,7 @@ export default function VoirToutPage() {
     };
 
     fetchProfiles();
-  }, [page, permissions, sortField, sortOrder]);
+  }, [page, permissions, sortField, sortOrder, statusFilter]);
 
   const tableRows = useMemo(() => {
     if (!profiles?.length) return [];
@@ -200,12 +236,13 @@ export default function VoirToutPage() {
       lastName: profile.lastName,
       email: profile.email,
       complete: profile.complete,
+      status: resolveProfileStatus(profile),
     }));
   }, [profiles]);
 
   const handleViewProfile = (profileId?: string) => {
     if (!profileId) return;
-    router.push(`/dashboard?view=${encodeURIComponent(profileId)}`);
+    router.push(`/dashboard/identification/voir-tout/profile?profileId=${encodeURIComponent(profileId)}`);
   };
 
   const handleEditProfile = async (profileId?: string) => {
@@ -236,6 +273,12 @@ export default function VoirToutPage() {
 
   const startItem = (page - 1) * PAGE_SIZE + (tableRows.length ? 1 : 0);
   const endItem = tableRows.length ? startItem + tableRows.length - 1 : 0;
+
+  const handleStatusFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = event.target.value as 'all' | ProfileStatusValue;
+    setStatusFilter(value);
+    setPage(1);
+  };
 
   const toggleSort = (field: SortField) => {
     setPage(1);
@@ -279,6 +322,24 @@ export default function VoirToutPage() {
         )}
 
         <div className="bg-white rounded-lg shadow">
+          <div className="flex flex-wrap items-center gap-3 border-b border-gray-100 px-4 py-3">
+            <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700">
+              {t('identification.filters.statusLabel') || 'Status filter'}
+            </label>
+            <select
+              id="statusFilter"
+              value={statusFilter}
+              onChange={handleStatusFilterChange}
+              className="rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none"
+            >
+              <option value="all">{t('identification.filters.statusAll') || 'All statuses'}</option>
+              {PROFILE_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {t(option.labelKey) || option.value}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -335,19 +396,21 @@ export default function VoirToutPage() {
                   tableRows.map((row) => (
                     <tr key={row.id} className="border-b last:border-b-0">
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                        {row.ownerId || row.id}
+                        {row.id || '--'}
                       </td>
                       <td className="px-4 py-3">{row.firstName || '--'}</td>
                       <td className="px-4 py-3">{row.lastName || '--'}</td>
                       <td className="px-4 py-3 text-gray-600">{row.email || '--'}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            row.complete === 1 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {row.complete === 1 ? 'Complete' : 'Incomplete'}
-                        </span>
+                        {row.status && (
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getStatusBadgeClasses(
+                              row.status,
+                            )}`}
+                          >
+                            {getProfileStatusLabel(row.status, (key) => t(key) || key)}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-3">

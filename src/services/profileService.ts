@@ -51,3 +51,11 @@ export async function getProfile() {
 export async function getProfileById(profileId: string) {
   return getJson(`/profile/byId/${encodeURIComponent(profileId)}`);
 }
+
+export async function updateProfileCompletion(profileId: string, complete: number, feedback?: string | null) {
+  return putJson('/profile/status', {
+    profileId,
+    complete,
+    feedback: typeof feedback === 'string' ? feedback : null,
+  });
+}

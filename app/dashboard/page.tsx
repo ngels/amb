@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
@@ -10,6 +10,7 @@ import { useTranslation } from '@/src/i18n/useTranslation';
 import { ProfileView } from '@/src/components/profile/ProfileView';
 import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument';
 import { CollapsibleView } from '@/src/components/ui/CollapsibleView';
+import { FeedbackHistoryPanel } from '@/src/components/ui/FeedbackHistoryPanel';
 import {
   coerceProfileStatus,
   getProfileStatusLabel,
@@ -86,6 +87,7 @@ export default function DashboardPage() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const requestedViewId = searchParams?.get('view');
+  const searchIdFromQuery = searchParams?.get('searchId');
 
   // Read permissions from localStorage so UI can react immediately
   useEffect(() => {
@@ -218,6 +220,27 @@ export default function DashboardPage() {
     window.dispatchEvent(new Event('profile-completion-changed'));
   }, [fullProfileData?.complete]);
 
+  const feedbackEntries = useMemo(() => {
+    if (!fullProfileData || !Array.isArray(fullProfileData?.fb_notes)) return [];
+    return [...fullProfileData.fb_notes]
+      .filter((entry: any) => typeof entry?.note === 'string' && entry.note.trim())
+      .map((entry: any, index: number) => ({
+        id: entry._id || entry.id || `${entry.createdAt || 'note'}-${index}`,
+        note: entry.note.trim(),
+        createdAt: entry.createdAt ? new Date(entry.createdAt) : null,
+      }))
+      .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+  }, [fullProfileData]);
+
+  const feedbackDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    [],
+  );
+
   const handlePrintPdf = useCallback(async () => {
     if (!fullProfileData || isGeneratingPdf) return;
     const completeValue = Number(fullProfileData.complete);
@@ -272,7 +295,7 @@ export default function DashboardPage() {
     }
   }, [fullProfileData, isGeneratingPdf, t]);
 
-  const searchById = async (id: string) => {
+  const searchById = useCallback(async (id: string) => {
     if (!id) {
       setSearchError('Please provide an ID');
       return;
@@ -315,7 +338,7 @@ export default function DashboardPage() {
     } finally {
       setSearchLoading(false);
     }
-  };
+  }, []);
 
   const openProfileInline = useCallback(async (id: string | null) => {
     const fetchSelfProfile = permissions === 'user';
@@ -378,6 +401,21 @@ export default function DashboardPage() {
     }
   }, [requestedViewId, viewFullProfileId, openProfileInline]);
 
+  useEffect(() => {
+    if (!searchIdFromQuery) return;
+    setSearchExpanded(true);
+    setSearchId(searchIdFromQuery);
+    searchById(searchIdFromQuery);
+
+    const serialized = searchParams?.toString() || '';
+    if (serialized.includes('searchId=')) {
+      const params = new URLSearchParams(serialized);
+      params.delete('searchId');
+      const next = params.toString() ? `/dashboard?${params.toString()}` : '/dashboard';
+      router.replace(next);
+    }
+  }, [searchIdFromQuery, searchParams, router, searchById]);
+
   const handleCloseFullProfile = () => {
     setViewFullProfileId(null);
     router.replace('/dashboard');
@@ -391,9 +429,6 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <DashboardNav />
       <main className="p-6">
-        <h1 className="text-3xl font-bold mb-4">
-          {t('dashboard.title') || 'Dashboard'}
-        </h1>
 
         {viewFullProfileId && fullProfileData ? (
           <div className="bg-white rounded-lg shadow-md p-8">
@@ -413,6 +448,27 @@ export default function DashboardPage() {
             </div>
 
             <ProfileView data={fullProfileData} includeId />
+
+            {!!feedbackEntries.length && (
+              <FeedbackHistoryPanel
+                entries={feedbackEntries}
+                title={t('dashboard.feedbackHistory.title') || 'Feedback history'}
+                caption={
+                  t('dashboard.feedbackHistory.caption') ||
+                  'Review notes left by reviewers while your profile is incomplete.'
+                }
+                emptyStateLabel={t('dashboard.feedbackHistory.empty') || 'No feedback has been recorded yet.'}
+                toggleAriaLabel={t('dashboard.feedbackHistory.toggle') || 'Toggle feedback history'}
+                unknownDateLabel={t('dashboard.feedbackHistory.unknownDate') || 'Date unavailable'}
+                panelId="self-feedback-history-panel"
+                dateFormatter={(date) => feedbackDateFormatter.format(date)}
+                defaultOpen
+                enableCarousel
+                maxItemsPerSlide={3}
+                previousSlideLabel={t('navigation.previous') || 'Previous'}
+                nextSlideLabel={t('navigation.next') || 'Next'}
+              />
+            )}
 
             <div className="flex justify-end gap-2 pt-6 border-t">
               <button
@@ -527,7 +583,17 @@ export default function DashboardPage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      openProfileInline(searchResult._id || searchResult.id || null);
+                      const targetId = searchResult._id || searchResult.id || null;
+                      if (!targetId) {
+                        openProfileInline(null);
+                        return;
+                      }
+                      const params = new URLSearchParams({
+                        profileId: targetId,
+                        fromSearch: 'true',
+                        searchId: targetId,
+                      });
+                      router.push(`/dashboard/identification/voir-tout/profile?${params.toString()}`);
                     }}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                   >

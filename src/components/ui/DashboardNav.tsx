@@ -126,13 +126,7 @@ export const DashboardNav: React.FC = () => {
   return (
     <nav className="w-full bg-white border-b py-3 px-4 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <Image src="/amb_vers.png" alt="AMB" width={120} height={40} priority />
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="text-lg font-semibold cursor-pointer hover:text-blue-600"
-        >
-          AMB
-        </button>
+        <Image src="/amb_vers.png"  onClick={() => router.push('/dashboard')}alt="AMB" width={220} height={100} priority />
       </div>
       <div className="flex items-center gap-4">
         <div className="relative" ref={ref}>
