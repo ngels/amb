@@ -17,6 +17,7 @@ export const PROFILE_SUMMARY_SECTIONS: ProfileSummarySection[] = [
     key: 'personal',
     titleKey: 'identification.step1.title',
     fields: [
+      { name: 'picture', labelKey: 'identification.step1.picture' },
       { name: 'firstName', labelKey: 'identification.step1.firstName' },
       { name: 'givenName', labelKey: 'identification.step1.givenName' },
       { name: 'lastName', labelKey: 'identification.step1.lastName' },

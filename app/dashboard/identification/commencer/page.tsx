@@ -10,6 +10,7 @@ import { PROVINCE_OPTIONS, getTerritoryOptions } from '@/src/constants/provinces
 import { SUBJECT_QUALITY_OPTIONS } from '@/src/constants/subjectQuality';
 import { useAuth } from '@/src/hooks/useAuth';
 import { ArrowBackButton } from '@/src/components/ui/ArrowBackButton';
+import { DEFAULT_PROFILE_PICTURE } from '@/src/utils/profilePicture';
 
 interface FormData {
   firstName: string;
@@ -474,6 +475,12 @@ export default function CommencerPage() {
   const [pictureError, setPictureError] = useState<string | null>(null);
   const [picturePreviewUrl, setPicturePreviewUrl] = useState<string | null>(null);
   const picturePreviewUrlRef = useRef<string | null>(null);
+  const handlePictureImgError = useCallback((event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = event.currentTarget;
+    if (img.src.endsWith(DEFAULT_PROFILE_PICTURE)) return;
+    img.onerror = null;
+    img.src = DEFAULT_PROFILE_PICTURE;
+  }, []);
   const clearPicturePreview = useCallback(() => {
     if (picturePreviewUrlRef.current) {
       URL.revokeObjectURL(picturePreviewUrlRef.current);
@@ -551,17 +558,28 @@ export default function CommencerPage() {
   const populateFormFromProfile = (profile: any) => {
     if (!profile) return;
 
-    let phoneCountryCode = '+243';
+    let phoneCountryCode = profile.countryCode || '+243';
     let phoneNumber = '';
     if (profile.phone_number) {
       const fullPhone = profile.phone_number.toString();
-      const matchedCountry = COUNTRY_PHONE_CODES.find((c) => fullPhone.startsWith(c.code));
-      if (matchedCountry) {
-        phoneCountryCode = matchedCountry.code;
-        phoneNumber = fullPhone.substring(matchedCountry.code.length);
+      if (profile.countryCode) {
+        if (fullPhone.startsWith(profile.countryCode)) {
+          phoneNumber = fullPhone.substring(profile.countryCode.length);
+        } else {
+          phoneNumber = fullPhone;
+        }
       } else {
-        phoneNumber = fullPhone;
+        const matchedCountry = COUNTRY_PHONE_CODES.find((c) => fullPhone.startsWith(c.code));
+        if (matchedCountry) {
+          phoneCountryCode = matchedCountry.code;
+          phoneNumber = fullPhone.substring(matchedCountry.code.length);
+        } else {
+          phoneNumber = fullPhone;
+        }
       }
+    }
+    if (phoneNumber) {
+      phoneNumber = phoneNumber.replace(/\D/g, '');
     }
 
     setCurrentProfileId(profile._id || profile.id || profileIdParam || null);
@@ -764,10 +782,11 @@ export default function CommencerPage() {
       if (!response.ok) {
         throw new Error(body?.error || 'Failed to upload picture.');
       }
-      if (!body?.path) {
-        throw new Error('Upload completed but no file path was returned.');
+      const storedPath: string | null = body?.publicUrl || body?.path || null;
+      if (!storedPath) {
+        throw new Error('Upload completed but no file location was returned.');
       }
-      handleInputChange('picture', body.path);
+      handleInputChange('picture', storedPath);
     } catch (uploadErr: any) {
       clearPicturePreview();
       handleInputChange('picture', '');
@@ -871,6 +890,9 @@ export default function CommencerPage() {
       if (formData.occupation_and_position) dataToSave.occupation_and_position = formData.occupation_and_position;
       if (formData.phone_number) {
         dataToSave.phone_number = formData.phone_number;
+        if (formData.phone_country_code) {
+          dataToSave.countryCode = formData.phone_country_code;
+        }
       }
       if (formData.email) dataToSave.email = formData.email;
       if (formData.picture) dataToSave.picture = formData.picture;
@@ -1003,6 +1025,9 @@ export default function CommencerPage() {
       if (formData.occupation_and_position) dataToSave.occupation_and_position = formData.occupation_and_position;
       if (formData.phone_number) {
         dataToSave.phone_number = formData.phone_number;
+        if (formData.phone_country_code) {
+          dataToSave.countryCode = formData.phone_country_code;
+        }
       }
       if (formData.email) dataToSave.email = formData.email;
       if (formData.picture) dataToSave.picture = formData.picture;
@@ -1201,17 +1226,18 @@ export default function CommencerPage() {
                               </p>
                               {formData.picture ? (
                                 <div className="mt-3 flex flex-col items-start justify-center">
-                                  {(picturePreviewUrl || (formData.picture?.startsWith('http') ? formData.picture : null)) ? (
-                                    <img
-                                      src={picturePreviewUrl || (formData.picture?.startsWith('http') ? formData.picture : undefined)}
-                                      alt={t('identification.step1.picturePreviewAlt') || 'Profile picture preview'}
-                                      className="h-32 w-32 rounded-md object-cover shadow"
-                                    />
-                                  ) : (
-                                    <div className="h-32 w-32 rounded-md border border-dashed border-gray-300 bg-gray-50 text-xs text-gray-500 flex items-center justify-center text-center p-2">
-                                      {t('identification.step1.pictureNoPreview') || 'Preview unavailable'}
-                                    </div>
-                                  )}
+                                  {(() => {
+                                    const savedPictureUrl = formData.picture || null;
+                                    const reviewPictureUrl = picturePreviewUrl || savedPictureUrl || DEFAULT_PROFILE_PICTURE;
+                                    return (
+                                      <img
+                                        src={reviewPictureUrl}
+                                        alt={t('identification.step1.picturePreviewAlt') || 'Profile picture preview'}
+                                        className="h-32 w-32 rounded-md object-cover shadow"
+                                        onError={handlePictureImgError}
+                                      />
+                                    );
+                                  })()}
                                 </div>
                               ) : (
                                 <p className="mt-2 text-gray-400 italic">
@@ -1355,6 +1381,7 @@ export default function CommencerPage() {
                   }
 
                   if (fieldConfig.name === 'picture') {
+                    const savedPictureUrl = formData.picture || null;
                     return (
                       <div
                         key={fieldConfig.name}
@@ -1399,13 +1426,25 @@ export default function CommencerPage() {
                               src={picturePreviewUrl}
                               alt={t('identification.step1.picturePreviewAlt') || 'Selected profile picture preview'}
                               className="h-32 w-32 rounded object-cover shadow"
+                              onError={handlePictureImgError}
                             />
                           </div>
                         )}
-                        {!picturePreviewUrl && formData.picture && (
-                          <p className="mt-4 text-xs text-gray-600 break-words">
-                            {t('identification.step1.pictureSavedPath') || 'Saved file path'}: {formData.picture}
-                          </p>
+                        {!picturePreviewUrl && savedPictureUrl && (
+                          <div className="mt-4">
+                            <p className="text-xs font-semibold text-gray-600 mb-2">
+                              {t('identification.step1.pictureSavedPreview') || 'Saved photo'}
+                            </p>
+                            <img
+                              src={savedPictureUrl}
+                              alt={t('identification.step1.picturePreviewAlt') || 'Saved profile picture preview'}
+                              className="h-32 w-32 rounded object-cover shadow"
+                              onError={handlePictureImgError}
+                            />
+                            <p className="mt-2 text-xs text-gray-600 break-words">
+                              {t('identification.step1.pictureSavedPath') || 'Saved file path'}: {formData.picture}
+                            </p>
+                          </div>
                         )}
                         {pictureError && (
                           <p className="mt-2 text-xs text-red-600">{pictureError}</p>

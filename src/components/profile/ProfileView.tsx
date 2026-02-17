@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import {
   GRANDPARENT_FIELDS,
@@ -12,6 +12,39 @@ import {
   hasValue,
   normalizeProfileData,
 } from './profileDataUtils';
+import Image from 'next/image';
+import { DEFAULT_PROFILE_PICTURE } from '@/src/utils/profilePicture';
+
+type ProfilePicturePreviewProps = {
+  src?: string | null;
+  alt: string;
+  size?: number;
+  className?: string;
+};
+
+const ProfilePicturePreview = ({ src, alt, size = 128, className }: ProfilePicturePreviewProps) => {
+  const [imageSrc, setImageSrc] = useState(src || DEFAULT_PROFILE_PICTURE);
+
+  useEffect(() => {
+    setImageSrc(src || DEFAULT_PROFILE_PICTURE);
+  }, [src]);
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={size}
+      height={size}
+      className={className}
+      unoptimized
+      onError={() => {
+        if (imageSrc !== DEFAULT_PROFILE_PICTURE) {
+          setImageSrc(DEFAULT_PROFILE_PICTURE);
+        }
+      }}
+    />
+  );
+};
 
 type StepSectionProps = {
   titleKey: string;
@@ -38,6 +71,24 @@ const StepSection = ({ titleKey, fields, data, t, notProvidedLabel }: StepSectio
           {fields.map((field) => {
             const rawValue = field.valueGetter ? field.valueGetter(data) : data?.[field.name];
             const displayValue = hasValue(rawValue) ? String(rawValue) : notProvidedLabel;
+            const isPictureField = field.name === 'picture';
+            const pictureUrl = isPictureField ? (data?.picture || null) : null;
+
+            if (isPictureField) {
+              return (
+                <div key={field.name} className="col-span-2 flex flex-col">
+                  <p className="text-gray-600 font-medium">{t(field.labelKey) || field.labelKey}</p>
+                  <div className="mt-3 h-32 w-32 rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+                    <ProfilePicturePreview
+                      src={pictureUrl}
+                      alt={t('identification.step1.picture') || 'Profile picture'}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={field.name}>
                 <p className="text-gray-600 font-medium">{t(field.labelKey) || field.labelKey}</p>
