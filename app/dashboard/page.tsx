@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
@@ -65,7 +65,7 @@ const resolveProfileStatus = (profile: Profile): ProfileStatusValue => {
 const composeFullName = (first?: string | null, last?: string | null) =>
   [first, last].filter(Boolean).join(' ').trim();
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
@@ -696,5 +696,13 @@ export default function DashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 p-6">Loading dashboard...</div>}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }
