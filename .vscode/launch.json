@@ -1,0 +1,33 @@
+// {
+//   "version": "0.2.0",
+//   "configurations": [
+//     {
+//       "name": "Launch Next.js",
+//       "type": "node",
+//       "request": "launch",
+//       "runtimeExecutable": "npm",
+//       "runtimeArgs": ["run", "dev"],
+//       "port": 9229,
+//       "console": "integratedTerminal",
+//       "protocol": "inspector"
+//     }
+//   ]
+// }
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: Debug Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 9229,
+      "env": {
+        "NODE_OPTIONS": "--inspect"
+      },
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ]
+}
