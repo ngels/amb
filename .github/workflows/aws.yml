@@ -30,7 +30,7 @@ on:
   push:
     branches: [ "main" ]
 
-# env:
+env:
   AWS_REGION:  ${{ vars.AWS_REGION }}                   # set this to your preferred AWS region, e.g. us-west-1
   ECR_REPOSITORY:  ${{ vars.ECR_REPOSITORY }}          # set this to your Amazon ECR repository name
   ECS_SERVICE:  ${{ vars.ECS_SERVICE }}                 # set this to your Amazon ECS service name
