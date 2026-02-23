@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
@@ -66,7 +66,7 @@ const getStatusBadgeClasses = (status: ProfileStatusValue): string => {
   }
 };
 
-export default function VoirToutProfilePage() {
+function VoirToutProfilePageContent() {
   useAuth();
   const { t } = useTranslation();
   const router = useRouter();
@@ -292,7 +292,7 @@ export default function VoirToutProfilePage() {
       const updatedData = response?.data || response || null;
 
       if (updatedData) {
-        setProfile((prev) => ({
+        setProfile((prev: any | null) => ({
           ...(prev || {}),
           ...updatedData,
           complete: updatedData.complete ?? completeValue,
@@ -770,5 +770,13 @@ export default function VoirToutProfilePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function VoirToutProfilePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 p-6">Loading profile...</div>}>
+      <VoirToutProfilePageContent />
+    </Suspense>
   );
 }

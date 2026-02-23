@@ -298,7 +298,7 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
         <View style={styles.body}>
           <View style={styles.header}>
             <Text style={styles.title}>FICHE D'IDENTIFICATION SPECIALE</Text>
-            <Image src="/leopard.png" style={styles.seal} alt="logo" />
+            <Image src="/leopard.png" style={styles.seal} />
           </View>
 
           <View style={styles.separator} />
