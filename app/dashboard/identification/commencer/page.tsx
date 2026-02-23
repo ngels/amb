@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
@@ -391,7 +391,7 @@ const normalizePermissions = (value: any): string | null => {
   return null;
 };
 
-export default function CommencerPage() {
+function CommencerPageContent() {
   const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1391,7 +1391,9 @@ export default function CommencerPage() {
                           {t(fieldConfig.labelKey)}
                         </label>
                         <p className="mt-1 text-xs text-gray-500">
-                          {t(fieldConfig.helperKey) || 'Upload a JPG or PNG image under 250 KB. The stored file path will be sent to the API.'}
+                          {fieldConfig.helperKey
+                            ? t(fieldConfig.helperKey)
+                            : 'Upload a JPG or PNG image under 250 KB. The stored file path will be sent to the API.'}
                         </p>
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                           <input
@@ -1629,5 +1631,13 @@ export default function CommencerPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function CommencerPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 p-6">Loading profile...</div>}>
+      <CommencerPageContent />
+    </Suspense>
   );
 }

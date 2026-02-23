@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import crypto from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
-import { Blob } from 'buffer';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const PROJECT_ROOT = process.cwd();
@@ -18,6 +17,13 @@ type UploadResult = {
   storedPath: string;
   publicUrl?: string;
   strategy: 'local' | 'cloud';
+};
+
+const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer => {
+  const arrayBuffer = new ArrayBuffer(buffer.length);
+  const view = new Uint8Array(arrayBuffer);
+  view.set(buffer);
+  return arrayBuffer;
 };
 
 const uploadToLocalFilesystem = async (fileName: string, buffer: Buffer): Promise<UploadResult> => {
@@ -40,7 +46,9 @@ const uploadToCloudStorage = async (
   }
 
   const formData = new FormData();
-  formData.append('file', new Blob([buffer], { type: mimeType }), fileName);
+  const arrayBuffer = bufferToArrayBuffer(buffer);
+  const blob = new Blob([arrayBuffer], { type: mimeType });
+  formData.append('file', blob, fileName);
 
   const response = await fetch(CLOUD_UPLOAD_ENDPOINT, {
     method: 'POST',
