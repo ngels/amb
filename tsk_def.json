@@ -1,5 +1,6 @@
   {
     "family": "ambfam",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/github-tskdef"
     "containerDefinitions": [
         {
             "name": "amb_front",
