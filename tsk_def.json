@@ -9,13 +9,17 @@
             "essential": true,
             "environment": [
                   {
-            "name": "NEXT_PUBLIC_BASE_URL",
-            "value": "http://localhost:3003/api/v1"
-        },
-        {
-            "name": "CLOUD_UPLOAD_ENDPOINT",
-            "value": "s3://amb-uploads-img/profileImg/"
-        }
+                    "name": "NEXT_PUBLIC_BASE_URL",
+                    "value": "http://localhost:3003/api/v1"
+                  },
+                  {
+                     "name": "CLOUD_UPLOAD_ENDPOINT",
+                     "value": "s3://amb-uploads-img/profileImg/"
+                  },
+                  {
+                    "name":"NODE_ENV",
+                    "value":"production"
+                  }
             ],
             "mountPoints": [],
             "volumesFrom": [],
