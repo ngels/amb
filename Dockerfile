@@ -11,7 +11,7 @@ RUN npm ci
 
 # 2. Build the Next.js app
 FROM node:20-alpine AS builder
-ENV NODE_ENV=development
+ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
