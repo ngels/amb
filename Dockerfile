@@ -17,7 +17,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN rm -rf .next && npx next build --debug-prerender
+RUN npm run build
 
 # 3. Create production image with only runtime deps
 FROM node:20-alpine AS runner
