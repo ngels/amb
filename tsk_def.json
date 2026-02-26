@@ -54,7 +54,6 @@
         }
     ],
     "family": "prodstackambFEServiceTaskDef7EB21823",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/prodstack-ambFEServiceTaskDefTaskRole8ECD47A6-difObZ32kOOo",
     "executionRoleArn": "arn:aws:iam::521806204140:role/prodstack-ambFEServiceTaskDefExecutionRoleCEB76694-9RMoVLKsreX4",
     "networkMode": "awsvpc",
     "revision": 1,
