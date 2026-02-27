@@ -13,6 +13,7 @@ RUN npm ci
 FROM node:20-alpine AS builder
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_BACKEND_URL='http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com/api/v1',
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -23,6 +24,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_BACKEND_URL='http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com/api/v1',
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
