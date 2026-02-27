@@ -1,11 +1,17 @@
-const BACKEND_BASE_URL = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL ||'';
+function resolveServerBaseUrl() {
+	return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+}
+
+function resolvePublicBaseUrl() {
+	return process.env.NEXT_PUBLIC_BACKEND_URL || resolveServerBaseUrl();
+}
 
 export function getBaseUrl(): string {
 	if (typeof window === 'undefined') {
-		return BACKEND_BASE_URL;
+		return resolveServerBaseUrl();
 	}
 
-	return process.env.NEXT_PUBLIC_BACKEND_URL || BACKEND_BASE_URL || '';
+	return resolvePublicBaseUrl();
 }
 
 export function getServerBaseUrl(): string {
@@ -13,7 +19,7 @@ export function getServerBaseUrl(): string {
 		throw new Error('getServerBaseUrl can only be called on the server');
 	}
 
-	return BACKEND_BASE_URL;
+	return resolveServerBaseUrl();
 }
 
 

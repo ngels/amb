@@ -33,6 +33,7 @@ RUN npm ci --omit=dev
 # Copy the built assets from the builder stage
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
+# Copy runtime config and source files that might be referenced by the app at runtime
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/postcss.config.mjs ./postcss.config.mjs
 COPY --from=builder /app/tailwind.config.* ./
