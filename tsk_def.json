@@ -18,7 +18,7 @@
             "command": [],
             "environment": [
                 {
-                    "name": "NEXT_PUBLIC_BASE_URL",
+                    "name": "BASE_URL",
                     "value": "http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com/api/v1"
                 },
                   {
