@@ -1,6 +1,7 @@
-import { BASE_URL } from '@/config';
+import { getBaseUrl } from '@/config';
 
 export async function postJson(path: string, payload: any) {
+  const BASE_URL = getBaseUrl();
   // Build headers and include stored tokens when available (client-side)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
@@ -61,6 +62,7 @@ export async function postJson(path: string, payload: any) {
 
 
 export async function getJson(path: string) {
+  const BASE_URL = getBaseUrl();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     if (typeof window !== 'undefined') {

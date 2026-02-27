@@ -1,7 +1,8 @@
-import { BASE_URL } from '@/config';
+import { getBaseUrl } from '@/config';
 import { getJson, postJson } from './authService';
 
 export async function putJson(path: string, payload: any) {
+  const BASE_URL = getBaseUrl();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     if (typeof window !== 'undefined') {

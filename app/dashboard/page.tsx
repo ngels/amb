@@ -5,7 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { ArrowBackButton } from '@/src/components/ui/ArrowBackButton';
-import { BASE_URL } from '@/config';
+import { getBaseUrl } from '@/config';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { ProfileView } from '@/src/components/profile/ProfileView';
 import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument';
@@ -69,6 +69,7 @@ function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
+  const BASE_URL = getBaseUrl();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [expandedProfileId, setExpandedProfileId] = useState<string | null>(null);

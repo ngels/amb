@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { useAuth } from '@/src/hooks/useAuth';
-import { BASE_URL } from '@/config';
+import { getBaseUrl } from '@/config';
 import { getProfileById } from '@/src/services/profileService';
 import {
   coerceProfileStatus,
@@ -105,6 +105,7 @@ export default function VoirToutPage() {
   const { t } = useTranslation();
   const router = useRouter();
   useAuth();
+  const BASE_URL = getBaseUrl();
 
   const [permissions, setPermissions] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);

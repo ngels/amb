@@ -10,7 +10,7 @@ import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument'
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { useAuth } from '@/src/hooks/useAuth';
 import { getProfileById, updateProfileCompletion } from '@/src/services/profileService';
-import { BASE_URL } from '@/config';
+import { getBaseUrl } from '@/config';
 import { FeedbackHistoryPanel } from '@/src/components/ui/FeedbackHistoryPanel';
 import {
   coerceProfileStatus,
@@ -70,6 +70,7 @@ function VoirToutProfilePageContent() {
   useAuth();
   const { t } = useTranslation();
   const router = useRouter();
+  const BASE_URL = getBaseUrl();
   const searchParams = useSearchParams();
   const profileId = searchParams?.get('profileId');
 
