@@ -1,25 +1,26 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/amb_ui:1",
+    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/prodstackambFEServiceTaskDef7EB21823:1",
     "containerDefinitions": [
         {
-            "name": "placeholder-cont",
-            "image": "521806204140.dkr.ecr.ap-northeast-3.amazonaws.com/amb@sha256:9222923ff467bf73f5c22668fe2b91087529121e9286a8fbfd0c5ed35883d145",
+            "name": "web",
+            "image": "nginx",
             "cpu": 0,
+            "links": [],
             "portMappings": [
                 {
-                    "name": "placeholder-cont-80-tcp",
-                    "containerPort": 80,
-                    "hostPort": 80,
-                    "protocol": "tcp",
-                    "appProtocol": "http"
+                    "containerPort": 3000,
+                    "hostPort": 3000,
+                    "protocol": "tcp"
                 }
             ],
             "essential": true,
+            "entryPoint": [],
+            "command": [],
             "environment": [
-                  {
-                    "name": "NEXT_PUBLIC_BASE_URL",
-                    "value": "http://localhost:3003/api/v1"
-                  },
+                {
+                    "name": "BACKEND_URL",
+                    "value": "http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com/api/v1"
+                },
                   {
                      "name": "CLOUD_UPLOAD_ENDPOINT",
                      "value": "s3://amb-uploads-img/profileImg/"
@@ -32,21 +33,27 @@
             "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
+            "secrets": [],
+            "dnsServers": [],
+            "dnsSearchDomains": [],
+            "extraHosts": [],
+            "dockerSecurityOptions": [],
+            "dockerLabels": {},
             "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "/ecs/",
-                    "awslogs-create-group": "true",
+                    "awslogs-group": "prodstack-ambFEServiceTaskDefwebLogGroupE2F9CD86-jaxHvncSN2pm",
                     "awslogs-region": "ap-northeast-3",
-                    "awslogs-stream-prefix": "ecs"
+                    "awslogs-stream-prefix": "ambFEService"
                 },
                 "secretOptions": []
             },
-            "systemControls": []
+            "systemControls": [],
+            "credentialSpecs": []
         }
     ],
-    "family": "amb_ui",
+    "family": "prodstackambFEServiceTaskDef7EB21823",
     "executionRoleArn": "arn:aws:iam::521806204140:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
     "revision": 1,
@@ -60,25 +67,19 @@
             "name": "ecs.capability.execution-role-awslogs"
         },
         {
-            "name": "com.amazonaws.ecs.capability.ecr-auth"
-        },
-        {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
         },
         {
-            "name": "ecs.capability.execution-role-ecr-pull"
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
         },
         {
             "name": "ecs.capability.task-eni"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
         }
     ],
     "placementConstraints": [],
@@ -90,13 +91,9 @@
     "requiresCompatibilities": [
         "FARGATE"
     ],
-    "cpu": "1024",
-    "memory": "3072",
-    "runtimePlatform": {
-        "cpuArchitecture": "X86_64",
-        "operatingSystemFamily": "LINUX"
-    },
-    "registeredAt": "2026-02-24T04:35:31.995Z",
-    "registeredBy": "arn:aws:iam::521806204140:root",
+    "cpu": "512",
+    "memory": "1024",
+    "registeredAt": "2026-02-26T14:35:41.810Z",
+    "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
