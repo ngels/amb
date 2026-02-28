@@ -4,7 +4,7 @@ import React, { Suspense, useState, useEffect, useCallback, useRef } from 'react
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
-import { updateProfile, getProfile, getProfileById } from '@/src/services/profileService';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 import { COUNTRY_PHONE_CODES } from '@/src/constants/countryCodes';
 import { PROVINCE_OPTIONS, getTerritoryOptions } from '@/src/constants/provinces';
 import { SUBJECT_QUALITY_OPTIONS } from '@/src/constants/subjectQuality';
@@ -397,6 +397,27 @@ function CommencerPageContent() {
   const searchParams = useSearchParams();
   useAuth();
   const profileIdParam = searchParams?.get('profileId');
+  const callBackend = useCallback((path: string, init?: RequestInit) =>
+    fetch(resolveBackendUrl(path), {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+    }), []);
+  const buildAuthHeaders = useCallback((): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    try {
+      if (typeof window !== 'undefined') {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        } else {
+          const login = localStorage.getItem('loginToken');
+          if (login) headers['x-login-token'] = login;
+        }
+      }
+    } catch (e) {}
+    return headers;
+  }, []);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -516,6 +537,63 @@ function CommencerPageContent() {
     } catch (e) {
       setProfileCompletion(null);
     }
+  }, []);
+
+  const fetchProfileData = useCallback(
+    async (targetProfileId?: string | null) => {
+      const headers = { 'Content-Type': 'application/json', ...buildAuthHeaders() };
+      const endpoint = targetProfileId ? `/profile/byId/${encodeURIComponent(targetProfileId)}` : '/profile/me';
+      const res = await callBackend(endpoint, {
+        method: 'GET',
+        headers,
+      });
+      const contentType = res.headers.get('content-type') || '';
+      const body = contentType.includes('application/json') ? await res.json().catch(() => ({})) : null;
+      if (!res.ok) {
+        const message = body?.data?.message || body?.message || 'Failed to load profile';
+        throw new Error(message);
+      }
+      return body?.data ?? body ?? null;
+    },
+    [buildAuthHeaders, callBackend],
+  );
+
+  const submitProfileData = useCallback(
+    async (payload: any) => {
+      const headers = { 'Content-Type': 'application/json', ...buildAuthHeaders() };
+      const res = await callBackend('/profile', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body?.status === 'fail') {
+        const message = body?.data?.message || body?.message || 'Failed to save profile';
+        throw new Error(message);
+      }
+      return body?.data ?? body ?? null;
+    },
+    [buildAuthHeaders, callBackend],
+  );
+
+  const uploadProfilePicture = useCallback(async (file: File) => {
+    const payload = new FormData();
+    payload.append('file', file);
+    const response = await fetch(PICTURE_UPLOAD_ENDPOINT, {
+      method: 'POST',
+      body: payload,
+      credentials: 'include',
+      cache: 'no-store',
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(body?.error || 'Failed to upload picture.');
+    }
+    const storedPath: string | null = body?.publicUrl || body?.path || body?.storedPath || null;
+    if (!storedPath) {
+      throw new Error('Upload completed but no file location was returned.');
+    }
+    return storedPath;
   }, []);
 
   useEffect(() => {
@@ -686,12 +764,10 @@ function CommencerPageContent() {
         if (profileIdParam) {
           profileData = getCachedEditingProfile();
           if (!profileData) {
-            const response = await getProfileById(profileIdParam);
-            profileData = response?.data || response;
+            profileData = await fetchProfileData(profileIdParam);
           }
         } else {
-          const response = await getProfile();
-          profileData = response?.data;
+          profileData = await fetchProfileData();
         }
 
         if (profileData) {
@@ -710,7 +786,7 @@ function CommencerPageContent() {
     };
 
     loadProfile();
-  }, [profileIdParam, permissions]);
+  }, [profileIdParam, permissions, fetchProfileData]);
 
   const handleInputChange = (fieldName: string, value: string) => {
     setFormData((prev) => {
@@ -772,20 +848,7 @@ function CommencerPageContent() {
     setPictureError(null);
 
     try {
-      const payload = new globalThis.FormData();
-      payload.append('file', file);
-      const response = await fetch(PICTURE_UPLOAD_ENDPOINT, {
-        method: 'POST',
-        body: payload,
-      });
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(body?.error || 'Failed to upload picture.');
-      }
-      const storedPath: string | null = body?.publicUrl || body?.path || null;
-      if (!storedPath) {
-        throw new Error('Upload completed but no file location was returned.');
-      }
+      const storedPath = await uploadProfilePicture(file);
       handleInputChange('picture', storedPath);
     } catch (uploadErr: any) {
       clearPicturePreview();
@@ -955,7 +1018,7 @@ function CommencerPageContent() {
       }
 
       // Save current progress
-      await updateProfile(dataToSave);
+      await submitProfileData(dataToSave);
 
       if (currentStep === 5) {
         // Move to review after step 5
@@ -964,7 +1027,7 @@ function CommencerPageContent() {
         setCurrentStep(currentStep + 1);
       }
     } catch (err: any) {
-      setError(err?.data?.message || 'Failed to save profile. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save profile. Please try again.');
       console.error('Error saving profile:', err);
     } finally {
       setIsLoading(false);
@@ -1089,7 +1152,7 @@ function CommencerPageContent() {
         if (formData.gp_maternal_gm_country) dataToSave.grandmere_mere.country = formData.gp_maternal_gm_country;
       }
 
-      await updateProfile(dataToSave);
+      await submitProfileData(dataToSave);
       alert('Profile saved successfully!');
       if (permissions && permissions !== 'user' && profileIdParam) {
         router.replace('/dashboard/identification/voir-tout');
@@ -1097,7 +1160,7 @@ function CommencerPageContent() {
         router.replace('/dashboard');
       }
     } catch (err: any) {
-      setError(err?.data?.message || 'Failed to save profile. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to save profile. Please try again.');
       console.error('Error saving profile:', err);
     } finally {
       setIsLoading(false);

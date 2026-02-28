@@ -13,6 +13,8 @@ RUN npm ci
 FROM node:20-alpine AS builder
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV BACKEND_URL=http://cod-ambcn.registra:5005/api/v1
+ENV PROFILE_PICTURE_CLOUD_UPLOAD_API_KEY=s3://amb-uploads-img/profileImg/
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules

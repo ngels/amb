@@ -9,8 +9,7 @@ import { ProfileView } from '@/src/components/profile/ProfileView';
 import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { useAuth } from '@/src/hooks/useAuth';
-import { getProfileById, updateProfileCompletion } from '@/src/services/profileService';
-import { getBaseUrl } from '@/config';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 import { FeedbackHistoryPanel } from '@/src/components/ui/FeedbackHistoryPanel';
 import {
   coerceProfileStatus,
@@ -70,7 +69,27 @@ function VoirToutProfilePageContent() {
   useAuth();
   const { t } = useTranslation();
   const router = useRouter();
-  const BASE_URL = getBaseUrl();
+  const callBackend = useCallback((path: string, init?: RequestInit) =>
+    fetch(resolveBackendUrl(path), {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+    }), []);
+  const buildAuthHeaders = useCallback((): Record<string, string> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    try {
+      if (typeof window !== 'undefined') {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        } else {
+          const login = localStorage.getItem('loginToken');
+          if (login) headers['x-login-token'] = login;
+        }
+      }
+    } catch (e) {}
+    return headers;
+  }, []);
   const searchParams = useSearchParams();
   const profileId = searchParams?.get('profileId');
 
@@ -122,8 +141,17 @@ function VoirToutProfilePageContent() {
     setLoading(true);
     setError(null);
     try {
-      const response = await getProfileById(id);
-      const profileData = response?.data || response;
+      const headers = buildAuthHeaders();
+      const res = await callBackend(`/profile/byId/${encodeURIComponent(id)}`, {
+        method: 'GET',
+        headers,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body?.status === 'fail') {
+        const message = body?.data?.message || body?.message || 'Profile not found';
+        throw new Error(message);
+      }
+      const profileData = body?.data || body;
       if (!profileData) {
         throw new Error('Profile not found');
       }
@@ -135,7 +163,7 @@ function VoirToutProfilePageContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [buildAuthHeaders, callBackend]);
 
   useEffect(() => {
     try {
@@ -149,27 +177,14 @@ function VoirToutProfilePageContent() {
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
+        const headers = buildAuthHeaders();
 
-        const res = await fetch(`${BASE_URL}/auth/me`, {
+        const res = await callBackend('/auth/me', {
           method: 'GET',
-          credentials: 'include',
           headers,
         });
-
         if (!res.ok) {
-          setPermissions(null);
-          setPermissionsResolved(true);
-          return;
+          throw new Error('Failed to fetch permissions');
         }
 
         const body = await res.json();
@@ -191,7 +206,7 @@ function VoirToutProfilePageContent() {
     };
 
     fetchPermissions();
-  }, []);
+  }, [buildAuthHeaders, callBackend]);
 
   useEffect(() => {
     if (!permissionsResolved) return;
@@ -203,7 +218,6 @@ function VoirToutProfilePageContent() {
   useEffect(() => {
     if (!profileId) {
       setProfile(null);
-      setError('Profile ID is missing.');
       setLoading(false);
       return;
     }
@@ -285,12 +299,26 @@ function VoirToutProfilePageContent() {
     }
 
     setStatusAction(action);
-    setApprovalMessage(null);
     const completeValue = action === 'approve' ? 4 : 2;
 
     try {
-      const response = await updateProfileCompletion(profileId, completeValue, feedbackMessage);
-      const updatedData = response?.data || response || null;
+      const headers = buildAuthHeaders();
+      const res = await callBackend('/profile/status', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          profileId,
+          complete: completeValue,
+          feedback: typeof feedbackMessage === 'string' ? feedbackMessage : null,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body?.status === 'fail') {
+        const message =
+          body?.data?.message || body?.message || t('dashboard.approvalSection.error') || 'Failed to update profile status.';
+        throw new Error(message);
+      }
+      const updatedData = body?.data || body || null;
 
       if (updatedData) {
         setProfile((prev: any | null) => ({
@@ -353,16 +381,7 @@ function VoirToutProfilePageContent() {
       if (!enableListNavigation) return;
       setListLoading(true);
       try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
+        const headers = buildAuthHeaders();
 
         const params = new URLSearchParams({
           page: String(targetPage),
@@ -378,9 +397,8 @@ function VoirToutProfilePageContent() {
           }
         }
 
-        const res = await fetch(`${BASE_URL}/profile/filledBy/all?${params.toString()}`, {
+        const res = await callBackend(`/profile/filledBy/all?${params.toString()}`, {
           method: 'GET',
-          credentials: 'include',
           headers,
         });
 
@@ -405,7 +423,7 @@ function VoirToutProfilePageContent() {
         setListLoading(false);
       }
     },
-    [enableListNavigation, sortFieldFromQuery, sortOrderFromQuery, statusFilterFromQuery],
+    [buildAuthHeaders, callBackend, enableListNavigation, sortFieldFromQuery, sortOrderFromQuery, statusFilterFromQuery],
   );
 
   useEffect(() => {

@@ -1,7 +1,6 @@
-import { getBaseUrl } from '@/config';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 
 export async function postJson(path: string, payload: any) {
-  const BASE_URL = getBaseUrl();
   // Build headers and include stored tokens when available (client-side)
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
@@ -20,7 +19,7 @@ export async function postJson(path: string, payload: any) {
     // ignore localStorage errors
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(resolveBackendUrl(path), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -62,7 +61,6 @@ export async function postJson(path: string, payload: any) {
 
 
 export async function getJson(path: string) {
-  const BASE_URL = getBaseUrl();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     if (typeof window !== 'undefined') {
@@ -78,7 +76,7 @@ export async function getJson(path: string) {
     // ignore localStorage errors
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(resolveBackendUrl(path), {
     method: 'GET',
     headers,
   });

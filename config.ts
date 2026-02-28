@@ -1,9 +1,18 @@
+function normalizeBaseUrl(url: string | undefined | null) {
+	if (!url) return '';
+	return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
 function resolveServerBaseUrl() {
-	return process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
+	const normalized = normalizeBaseUrl(process.env.BACKEND_URL);
+	if (!normalized) {
+		throw new Error('BACKEND_URL is not configured. It must point to the internal backend origin.');
+	}
+	return normalized;
 }
 
 function resolvePublicBaseUrl() {
-	return process.env.NEXT_PUBLIC_BACKEND_URL || resolveServerBaseUrl();
+	return '/api/backend';
 }
 
 export function getBaseUrl(): string {

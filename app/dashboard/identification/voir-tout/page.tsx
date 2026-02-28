@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { useAuth } from '@/src/hooks/useAuth';
-import { getBaseUrl } from '@/config';
-import { getProfileById } from '@/src/services/profileService';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 import {
   coerceProfileStatus,
   getProfileStatusLabel,
@@ -105,7 +104,27 @@ export default function VoirToutPage() {
   const { t } = useTranslation();
   const router = useRouter();
   useAuth();
-  const BASE_URL = getBaseUrl();
+  const callBackend = useCallback((path: string, init?: RequestInit) =>
+    fetch(resolveBackendUrl(path), {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+    }), []);
+  const buildAuthHeaders = useCallback((): Record<string, string> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    try {
+      if (typeof window !== 'undefined') {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        } else {
+          const login = localStorage.getItem('loginToken');
+          if (login) headers['x-login-token'] = login;
+        }
+      }
+    } catch (e) {}
+    return headers;
+  }, []);
 
   const [permissions, setPermissions] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -131,20 +150,10 @@ export default function VoirToutPage() {
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
+        const headers = buildAuthHeaders();
 
-        const res = await fetch(`${BASE_URL}/auth/me`, {
+        const res = await callBackend('/auth/me', {
           method: 'GET',
-          credentials: 'include',
           headers,
         });
 
@@ -160,7 +169,7 @@ export default function VoirToutPage() {
     };
 
     fetchPermissions();
-  }, []);
+  }, [buildAuthHeaders, callBackend]);
 
   useEffect(() => {
     if (permissions === 'user') {
@@ -175,16 +184,7 @@ export default function VoirToutPage() {
       setLoading(true);
       setError(null);
       try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
+        const headers = buildAuthHeaders();
 
         const params = new URLSearchParams({
           page: String(page),
@@ -200,8 +200,8 @@ export default function VoirToutPage() {
           }
         }
 
-        const res = await fetch(`${BASE_URL}/profile/filledBy/all?${params.toString()}`, {
-          credentials: 'include',
+        const res = await callBackend(`/profile/filledBy/all?${params.toString()}`, {
+          method: 'GET',
           headers,
         });
 
@@ -226,7 +226,7 @@ export default function VoirToutPage() {
     };
 
     fetchProfiles();
-  }, [page, permissions, sortField, sortOrder, statusFilter]);
+  }, [buildAuthHeaders, callBackend, page, permissions, sortField, sortOrder, statusFilter]);
 
   const tableRows = useMemo(() => {
     if (!profiles?.length) return [];
@@ -251,11 +251,17 @@ export default function VoirToutPage() {
     setEditingRowId(profileId);
     setError(null);
     try {
-      const response = await getProfileById(profileId);
-      const profileData = response?.data || response;
-      if (!profileData) {
-        throw new Error('Profile not found');
+      const headers = buildAuthHeaders();
+      const res = await callBackend(`/profile/byId/${encodeURIComponent(profileId)}`, {
+        method: 'GET',
+        headers,
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || body?.status === 'fail') {
+        const message = body?.data?.message || body?.message || 'Profile not found';
+        throw new Error(message);
       }
+      const profileData = body?.data || body;
       if (typeof window !== 'undefined') {
         try {
           sessionStorage.setItem('editingProfile', JSON.stringify(profileData));

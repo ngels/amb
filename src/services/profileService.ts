@@ -1,8 +1,7 @@
-import { getBaseUrl } from '@/config';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 import { getJson, postJson } from './authService';
 
 export async function putJson(path: string, payload: any) {
-  const BASE_URL = getBaseUrl();
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     if (typeof window !== 'undefined') {
@@ -18,7 +17,7 @@ export async function putJson(path: string, payload: any) {
     // ignore localStorage errors
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(resolveBackendUrl(path), {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
