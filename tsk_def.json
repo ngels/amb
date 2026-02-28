@@ -1,5 +1,5 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/prodstackambFEServiceTaskDef7EB21823:1",
+    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/ambaRegisfeServiceTaskDefB8E7EF9F:1",
     "containerDefinitions": [
         {
             "name": "web",
@@ -18,11 +18,11 @@
             "command": [],
             "environment": [
                 {
-                    "name": "NEXT_PUBLIC_BACKEND_URL",
-                    "value": "http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com/api/v1"
+                    "name": "BACKEND_URL",
+                    "value": "http://cod-ambcn.registra:5005/api/v1"
                 },
-                  {
-                     "name": "CLOUD_UPLOAD_ENDPOINT",
+                 {
+                     "name": "PROFILE_PICTURE_CLOUD_UPLOAD_API_KEY",
                      "value": "s3://amb-uploads-img/profileImg/"
                   },
                   {
@@ -43,9 +43,9 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "prodstack-ambFEServiceTaskDefwebLogGroupE2F9CD86-jaxHvncSN2pm",
+                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-msBVNxQm9TeA",
                     "awslogs-region": "ap-northeast-3",
-                    "awslogs-stream-prefix": "ambFEService"
+                    "awslogs-stream-prefix": "feService"
                 },
                 "secretOptions": []
             },
@@ -53,7 +53,8 @@
             "credentialSpecs": []
         }
     ],
-    "family": "prodstackambFEServiceTaskDef7EB21823",
+    "family": "ambaRegisfeServiceTaskDefB8E7EF9F",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-Zpo2bGAtb2dl",
     "executionRoleArn": "arn:aws:iam::521806204140:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
     "revision": 1,
@@ -85,15 +86,15 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "FARGATE",
-        "MANAGED_INSTANCES"
+        "MANAGED_INSTANCES",
+        "FARGATE"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-02-26T14:35:41.810Z",
+    "registeredAt": "2026-02-28T08:01:52.075Z",
     "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
