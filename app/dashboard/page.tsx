@@ -91,6 +91,19 @@ function DashboardPageContent() {
     return headers;
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const hasAccessToken = Boolean(localStorage.getItem('accessToken'));
+      const hasLoginToken = Boolean(localStorage.getItem('loginToken'));
+      if (!hasAccessToken && !hasLoginToken) {
+        router.replace('/signin');
+      }
+    } catch (err) {
+      router.replace('/signin');
+    }
+  }, [router]);
+
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [expandedProfileId, setExpandedProfileId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,6 +144,13 @@ function DashboardPageContent() {
           headers,
         });
 
+        if (res.status === 401) {
+          setPermissions(null);
+          setPermissionsResolved(true);
+          router.replace('/signin');
+          return;
+        }
+
         if (!res.ok) {
           setPermissions(null);
           setPermissionsResolved(true);
@@ -156,7 +176,7 @@ function DashboardPageContent() {
     };
 
     fetchPermissions();
-  }, [buildAuthHeaders, buildRequest]);
+  }, [buildAuthHeaders, buildRequest, router]);
 
   useEffect(() => {
     if (!permissionsResolved) return;

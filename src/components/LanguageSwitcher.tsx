@@ -11,7 +11,7 @@ const languageOptions: Array<{ code: Language; label: string }> = [
 ];
 
 type LanguageSwitcherProps = {
-  variant?: 'button' | 'menu';
+  variant?: 'button' | 'menu' | 'pill';
 };
 
 export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps = {}) {
@@ -27,7 +27,9 @@ export function LanguageSwitcher({ variant = 'button' }: LanguageSwitcherProps =
   const baseClasses =
     variant === 'menu'
       ? 'w-full px-4 py-2 text-gray-900 hover:bg-gray-100 flex items-center justify-center gap-3 text-sm'
-      : 'px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 hover:bg-gray-50 min-w-[140px] text-sm font-medium flex items-center justify-center gap-3';
+      : variant === 'pill'
+        ? 'px-3 py-1 rounded-full border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 text-xs font-medium flex items-center justify-center gap-1.5 shadow-sm'
+        : 'px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 hover:bg-gray-50 min-w-[140px] text-sm font-medium flex items-center justify-center gap-3';
   const iconClasses = 'text-gray-500 text-base';
 
   return (

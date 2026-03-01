@@ -99,16 +99,33 @@ export async function getJson(path: string) {
 }
 
 export async function signout() {
-  const body = await getJson('/auth/signout');
+  let backendResponse: any = null;
+  try {
+    backendResponse = await getJson('/auth/signout');
+  } catch (err) {
+    backendResponse = err;
+  }
+
+  try {
+    await fetch('/api/auth/signout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    // ignore cookie clear failures
+  }
+
   try {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('loginToken');
       localStorage.removeItem('userPermissions');
+      localStorage.removeItem('profileCompleteStatus');
     }
   } catch (e) {
     // ignore storage errors
   }
-  return body;
+
+  return backendResponse;
 }
 
