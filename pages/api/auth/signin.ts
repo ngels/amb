@@ -1,6 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerBaseUrl } from '@/config';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const ONE_DAY_SECONDS = 60 * 60 * 24;
+
+function createCookie(name: string, value: string, maxAgeSeconds = ONE_DAY_SECONDS) {
+  const encoded = encodeURIComponent(value);
+  const parts = [
+    `${name}=${encoded}`,
+    'Path=/',
+    `Max-Age=${maxAgeSeconds}`,
+    'HttpOnly',
+    'SameSite=Lax',
+  ];
+  if (isProduction) {
+    parts.push('Secure');
+  }
+  return parts.join('; ');
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -29,6 +47,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const body = await response.json().catch(() => ({}));
     const statusCode = response.status || (body?.status === 'fail' ? 400 : 200);
+
+    if (response.ok && body?.data) {
+      const cookies: string[] = [];
+      if (typeof body.data.accessToken === 'string' && body.data.accessToken) {
+        cookies.push(createCookie('amb_access_token', body.data.accessToken));
+      }
+      if (typeof body.data.loginToken === 'string' && body.data.loginToken) {
+        cookies.push(createCookie('amb_login_token', body.data.loginToken));
+      }
+      if (cookies.length) {
+        res.setHeader('Set-Cookie', cookies);
+      }
+    }
 
     return res.status(statusCode).json(body);
   } catch (error: any) {

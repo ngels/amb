@@ -33,6 +33,8 @@ export const translations: Record<Language, Record<string, string>> = {
     'signin.noAccount': "Don't have an account?",
     'signin.signup': 'Sign Up',
     'signin.forgotPassword': 'Forgot Password?',
+    'signin.homeLink': 'Go to homepage',
+    'signin.helpLink.aria': 'Open the help center in a new tab',
 
     // Forgot Password Page
     'forgotPassword.title': 'Forgot Password?',
@@ -234,6 +236,11 @@ export const translations: Record<Language, Record<string, string>> = {
     'signin.noAccount': "Vous n'avez pas de compte?",
     'signin.signup': "S'inscrire",
     'signin.forgotPassword': 'Mot de passe oublié?',
+    'signin.homeLink': "Revenir à la page d'accueil",
+    'signin.homeLabel': 'Accueil',
+    'signin.languageLabel': 'Langue',
+    'signin.helpLabel': 'Aide',
+    'signin.helpLink.aria': "Ouvrir la page d'aide dans un nouvel onglet",
 
     // Forgot Password Page
     'forgotPassword.title': 'Mot de passe oublié?',
@@ -414,3 +421,57 @@ export function getTranslation(
 ): string {
   return translations[language][key] || fallback || key;
 }
+
+export interface HelpFaqEntry {
+  id: string;
+  question: Record<Language, string>;
+  answers: Record<Language, string[]>;
+}
+
+export const helpFaqEntries: HelpFaqEntry[] = [
+  {
+    id: 'resetPassword',
+    question: {
+      en: 'How do I reset my password?',
+      fr: 'Comment réinitialiser mon mot de passe ?'
+    },
+    answers: {
+      en: [
+        'Use the Forgot password link on the sign-in screen, then follow the email instructions. The link expires after 30 minutes for security.'
+      ],
+      fr: [
+        "Utilisez le lien Mot de passe oublié sur l'écran de connexion, puis suivez les instructions du courriel. Le lien expire après 30 minutes pour la sécurité."
+      ]
+    }
+  },
+  {
+    id: 'offlineUsage',
+    question: {
+      en: 'Can I use AMB offline?',
+      fr: 'Puis-je utiliser AMB hors ligne ?'
+    },
+    answers: {
+      en: [
+        'AMB needs an internet connection to sync changes with the backend. You can draft updates offline, but you must reconnect before submitting the data.'
+      ],
+      fr: [
+        "AMB nécessite une connexion Internet pour synchroniser les modifications avec le backend. Vous pouvez préparer vos mises à jour hors ligne, mais vous devez vous reconnecter avant de les envoyer."
+      ]
+    }
+  },
+  {
+    id: 'fileAccess',
+    question: {
+      en: 'Who can access my submitted files?',
+      fr: 'Qui peut accéder aux fichiers que je soumets ?'
+    },
+    answers: {
+      en: [
+        'Only members of your organization with the appropriate dashboard role can open submitted files. Each audit event is logged for compliance.'
+      ],
+      fr: [
+        "Seuls les membres de votre organisation disposant du rôle adéquat dans le tableau de bord peuvent ouvrir les fichiers envoyés. Chaque accès est journalisé pour assurer la conformité."
+      ]
+    }
+  }
+];

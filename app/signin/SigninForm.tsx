@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as Yup from 'yup';
 import { FormikForm } from '@/src/components/forms/FormikForm';
 import { TextBox } from '@/src/components/ui/TextBox';
@@ -11,6 +12,7 @@ import { useTranslation } from '@/src/i18n/useTranslation';
 export function SigninForm() {
   const { t } = useTranslation();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -53,7 +55,12 @@ export function SigninForm() {
             }
           }
         } catch (e) {}
-        router.push('/dashboard');
+        const redirectParam = searchParams?.get('redirectTo');
+        const safeRedirect =
+          redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+            ? redirectParam
+            : '/dashboard';
+        router.push(safeRedirect);
       }
     } catch (error: any) {
       setErrorMessage(error?.message || t('message.signinError'));
@@ -64,7 +71,7 @@ export function SigninForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+      <div className="w-full max-w-[40rem] bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800" data-testid="signin-title">
           {t('signin.title')}
         </h1>
@@ -83,7 +90,7 @@ export function SigninForm() {
 
         <FormikForm initialValues={initialValues} validationSchema={signinSchema} onSubmit={handleSubmit}>
           {(formik) => (
-            <>
+            <div className="space-y-4">
               <TextBox
                 name="email"
                 label={t('signin.email')}
@@ -97,9 +104,16 @@ export function SigninForm() {
                 placeholder={t('signin.password.placeholder')}
               />
               <Button type="submit" label={t('signin.submit')} disabled={formik.isSubmitting} />
-            </>
+            </div>
           )}
         </FormikForm>
+
+        <p className="mt-8 text-center text-sm text-gray-600">
+          {t('signin.noAccount')}{' '}
+          <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
+            {t('signin.signup')}
+          </Link>
+        </p>
       </div>
     </div>
   );
