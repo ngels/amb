@@ -13,6 +13,8 @@ RUN npm ci
 FROM node:20-alpine AS builder
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV BACKEND_URL=http://cod-ambcn.registra:5005/api/v1
+ENV PROFILE_PICTURE_CLOUD_UPLOAD_API_KEY=s3://amb-uploads-img/profileImg/
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -23,6 +25,7 @@ RUN npm run build
 FROM node:20-alpine AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_BACKEND_URL=http://internal-prodst-ambBE-rm4CvraJKNga-2040253924.ap-northeast-3.elb.amazonaws.com
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
@@ -33,6 +36,7 @@ RUN npm ci --omit=dev
 # Copy the built assets from the builder stage
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
+# Copy runtime config and source files that might be referenced by the app at runtime
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/postcss.config.mjs ./postcss.config.mjs
 COPY --from=builder /app/tailwind.config.* ./

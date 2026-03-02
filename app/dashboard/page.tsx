@@ -5,7 +5,7 @@ import { pdf } from '@react-pdf/renderer';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DashboardNav } from '@/src/components/ui/DashboardNav';
 import { ArrowBackButton } from '@/src/components/ui/ArrowBackButton';
-import { BASE_URL } from '@/config';
+import { resolveBackendUrl } from '@/src/services/httpClient';
 import { useTranslation } from '@/src/i18n/useTranslation';
 import { ProfileView } from '@/src/components/profile/ProfileView';
 import { ProfilePdfDocument } from '@/src/components/profile/ProfilePdfDocument';
@@ -69,6 +69,40 @@ function DashboardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
+  const buildRequest = useCallback((path: string, init?: RequestInit) =>
+    fetch(resolveBackendUrl(path), {
+      credentials: 'include',
+      cache: 'no-store',
+      ...init,
+    }), []);
+  const buildAuthHeaders = useCallback(() => {
+    const headers: Record<string, string> = {};
+    try {
+      if (typeof window !== 'undefined') {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        } else {
+          const login = localStorage.getItem('loginToken');
+          if (login) headers['x-login-token'] = login;
+        }
+      }
+    } catch (e) {}
+    return headers;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const hasAccessToken = Boolean(localStorage.getItem('accessToken'));
+      const hasLoginToken = Boolean(localStorage.getItem('loginToken'));
+      if (!hasAccessToken && !hasLoginToken) {
+        router.replace('/signin');
+      }
+    } catch (err) {
+      router.replace('/signin');
+    }
+  }, [router]);
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [expandedProfileId, setExpandedProfileId] = useState<string | null>(null);
@@ -103,22 +137,19 @@ function DashboardPageContent() {
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
+        const headers = { 'Content-Type': 'application/json', ...buildAuthHeaders() };
 
-        const res = await fetch(`${BASE_URL}/auth/me`, {
+        const res = await buildRequest('/auth/me', {
           method: 'GET',
-          credentials: 'include',
           headers,
         });
+
+        if (res.status === 401) {
+          setPermissions(null);
+          setPermissionsResolved(true);
+          router.replace('/signin');
+          return;
+        }
 
         if (!res.ok) {
           setPermissions(null);
@@ -145,7 +176,7 @@ function DashboardPageContent() {
     };
 
     fetchPermissions();
-  }, []);
+  }, [buildAuthHeaders, buildRequest, router]);
 
   useEffect(() => {
     if (!permissionsResolved) return;
@@ -161,23 +192,9 @@ function DashboardPageContent() {
     const fetchProfiles = async () => {
       try {
         setIsLoading(true);
-        const headers: Record<string, string> = {};
-        try {
-          if (typeof window !== 'undefined') {
-            const accessToken = localStorage.getItem('accessToken');
-            if (accessToken) {
-              headers['Authorization'] = `Bearer ${accessToken}`;
-            } else {
-              const login = localStorage.getItem('loginToken');
-              if (login) headers['x-login-token'] = login;
-            }
-          }
-        } catch (e) {}
+        const headers = buildAuthHeaders();
 
-        const res = await fetch(`${BASE_URL}/profile/me`, {
-          credentials: 'include',
-          headers,
-        });
+        const res = await buildRequest('/profile/me', { headers });
 
         if (res.ok) {
           const body = await res.json();
@@ -207,7 +224,7 @@ function DashboardPageContent() {
     };
 
     fetchProfiles();
-  }, [permissions, permissionsResolved, requestedViewId]);
+  }, [buildAuthHeaders, buildRequest, permissions, permissionsResolved, requestedViewId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -304,23 +321,9 @@ function DashboardPageContent() {
     setSearchError(null);
     setSearchResult(null);
     try {
-      const headers: Record<string, string> = {};
-      try {
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
-      } catch (e) {}
+      const headers = buildAuthHeaders();
 
-      const res = await fetch(`${BASE_URL}/profile/byId/${encodeURIComponent(id)}`, {
-        credentials: 'include',
-        headers,
-      });
+        const res = await buildRequest(`/profile/byId/${encodeURIComponent(id)}`, { headers });
 
       if (res.ok) {
         const body = await res.json();
@@ -338,7 +341,7 @@ function DashboardPageContent() {
     } finally {
       setSearchLoading(false);
     }
-  }, []);
+  }, [buildAuthHeaders, buildRequest]);
 
   const openProfileInline = useCallback(async (id: string | null) => {
     const fetchSelfProfile = permissions === 'user';
@@ -346,27 +349,13 @@ function DashboardPageContent() {
     setIsLoading(true);
     setError(null);
     try {
-      const headers: Record<string, string> = {};
-      try {
-        if (typeof window !== 'undefined') {
-          const accessToken = localStorage.getItem('accessToken');
-          if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-          } else {
-            const login = localStorage.getItem('loginToken');
-            if (login) headers['x-login-token'] = login;
-          }
-        }
-      } catch (e) {}
+      const headers = buildAuthHeaders();
 
-      const endpoint = fetchSelfProfile
-        ? `${BASE_URL}/profile/me`
-        : `${BASE_URL}/profile/byId/${encodeURIComponent(id as string)}`;
+      const endpointPath = fetchSelfProfile
+        ? '/profile/me'
+        : `/profile/byId/${encodeURIComponent(id as string)}`;
 
-      const res = await fetch(endpoint, {
-        credentials: 'include',
-        headers,
-      });
+      const res = await buildRequest(endpointPath, { headers });
 
       if (res.ok) {
         const body = await res.json();
@@ -393,7 +382,7 @@ function DashboardPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [permissions, router]);
+  }, [buildAuthHeaders, buildRequest, permissions, router]);
 
   useEffect(() => {
     if (requestedViewId && requestedViewId !== viewFullProfileId) {

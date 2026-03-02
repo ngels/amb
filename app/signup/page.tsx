@@ -1,4 +1,6 @@
-'use client';
+ 'use client';
+
+import { SigninFooter } from '@/app/signin/SigninFooter';
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -97,8 +99,9 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
+    <div className="min-h-screen flex flex-col bg-gray-100">
+      <div className="flex-1 flex items-center justify-center px-4">
+        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
           {t('signup.title')}
         </h1>
@@ -170,7 +173,9 @@ export default function SignUpPage() {
             {t('signup.signIn')}
           </a>
         </p>
+        </div>
       </div>
+      <SigninFooter className="mt-12" />
     </div>
   );
 }
