@@ -24,6 +24,25 @@
                   {
                     "name":"NODE_ENV",
                     "value":"production"
+                  },
+                  {
+                    "name":"PROFILE_PICTURE_PUBLIC_BASE_URL",
+                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_PUBLIC_BASE_URL"
+                  },
+                  {
+                    "name":"PROFILE_PICTURE_S3_REGION",
+                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_REGION"
+                  },
+                  {
+                    "name":"PROFILE_PICTURE_S3_TARGET",
+                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_TARGET"
+                  },{
+                    "name":"AWS_ACCESS_KEY_ID",
+                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3-KID"
+                  },
+                  {
+                    "name":"AWS_SECRET_ACCESS_KEY",
+                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3_secret"
                   }
             ],
             "secrets":[
