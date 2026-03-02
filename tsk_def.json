@@ -61,7 +61,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-msBVNxQm9TeA",
+                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-bZbkTEnQc6vS",
                     "awslogs-region": "ap-northeast-3",
                     "awslogs-stream-prefix": "feService"
                 },
@@ -72,9 +72,10 @@
         }
     ],
     "family": "ambaRegisfeServiceTaskDefB8E7EF9F",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-TFDmoGtrrIdg",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefExecutionRole9AB7D596-HZsEgrt7RG6V",
     "networkMode": "awsvpc",
-    "revision": 1,
+    "revision": 8,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -103,15 +104,15 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "MANAGED_INSTANCES",
-        "FARGATE"
+        "FARGATE",
+        "MANAGED_INSTANCES"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-02-28T08:01:52.075Z",
+    "registeredAt": "2026-03-02T14:19:22.941Z",
     "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
