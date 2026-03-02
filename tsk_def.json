@@ -1,5 +1,4 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/ambaRegisfeServiceTaskDefB8E7EF9F:1",
     "containerDefinitions": [
         {
             "name": "web",
@@ -54,7 +53,6 @@
         }
     ],
     "family": "ambaRegisfeServiceTaskDefB8E7EF9F",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-Zpo2bGAtb2dl",
     "executionRoleArn": "arn:aws:iam::521806204140:role/ecsTaskExecutionRole",
     "networkMode": "awsvpc",
     "revision": 1,
