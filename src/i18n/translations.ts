@@ -239,7 +239,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'signin.noAccount': "Vous n'avez pas de compte?",
     'signin.signup': "S'inscrire",
     'signin.forgotPassword': 'Mot de passe oublié?',
-    'signin.homeLink': 'Revenir à la page d’accueil',
+    'signin.homeLink': "Revenir à la page d'accueil",
     'signin.homeLabel': 'Accueil',
     'signin.languageLabel': 'Langue',
     'signin.helpLabel': 'Aide',
