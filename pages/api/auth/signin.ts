@@ -19,6 +19,17 @@ function createCookie(name: string, value: string, maxAgeSeconds = ONE_DAY_SECON
   return parts.join('; ');
 }
 
+function resolveTokenValue(data: any, keys: string[]) {
+  if (!data || typeof data !== 'object') return null;
+  for (const key of keys) {
+    const value = data?.[key];
+    if (typeof value === 'string' && value) {
+      return value;
+    }
+  }
+  return null;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -50,11 +61,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (response.ok && body?.data) {
       const cookies: string[] = [];
-      if (typeof body.data.accessToken === 'string' && body.data.accessToken) {
-        cookies.push(createCookie('amb_access_token', body.data.accessToken));
+      const accessToken = resolveTokenValue(body.data, ['accessToken', 'access_token', 'access-token']);
+      const loginToken = resolveTokenValue(body.data, ['loginToken', 'login_token', 'login-token']);
+
+      if (accessToken) {
+        cookies.push(createCookie('amb_access_token', accessToken));
       }
-      if (typeof body.data.loginToken === 'string' && body.data.loginToken) {
-        cookies.push(createCookie('amb_login_token', body.data.loginToken));
+      if (loginToken) {
+        cookies.push(createCookie('amb_login_token', loginToken));
       }
       if (cookies.length) {
         res.setHeader('Set-Cookie', cookies);

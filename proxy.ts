@@ -13,6 +13,10 @@ function isPublicPath(pathname: string) {
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  if (pathname.includes('.')) {
+    return NextResponse.next();
+  }
+
   if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
