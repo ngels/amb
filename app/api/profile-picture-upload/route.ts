@@ -2,12 +2,58 @@ import { NextResponse } from 'next/server';
 import path from 'path';
 import crypto from 'crypto';
 import { mkdir, writeFile } from 'fs/promises';
+import { S3Client, PutObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const PROJECT_ROOT = process.cwd();
 const LOCAL_UPLOAD_DIRECTORY = path.join(PROJECT_ROOT, 'public', 'static');
-const CLOUD_UPLOAD_ENDPOINT = process.env.PROFILE_PICTURE_CLOUD_UPLOAD_URL;
-const CLOUD_UPLOAD_API_KEY = process.env.PROFILE_PICTURE_CLOUD_UPLOAD_API_KEY;
+const PROFILE_PICTURE_PUBLIC_BASE_URL = process.env.PROFILE_PICTURE_PUBLIC_BASE_URL;
+const PROFILE_PICTURE_S3_REGION =
+  process.env.PROFILE_PICTURE_S3_REGION ||
+  process.env.AWS_REGION ||
+  process.env.AWS_DEFAULT_REGION ||
+  'us-east-1';
+const PROFILE_PICTURE_S3_TARGET =
+  process.env.PROFILE_PICTURE_S3_TARGET ||
+  process.env.PROFILE_PICTURE_CLOUD_UPLOAD_URL;
+const S3_CANNED_ACLS = new Set([
+  'private',
+  'public-read',
+  'public-read-write',
+  'authenticated-read',
+  'aws-exec-read',
+  'bucket-owner-read',
+  'bucket-owner-full-control',
+  'log-delivery-write',
+]);
+
+const normalizeS3Acl = (value?: string): ObjectCannedACL | undefined => {
+  if (!value) {
+    return undefined;
+  }
+
+  const isValidAcl = S3_CANNED_ACLS.has(value);
+  if (!isValidAcl) {
+    console.warn(`Ignored unsupported PROFILE_PICTURE_S3_ACL value: ${value}`);
+    return undefined;
+  }
+
+  return value as ObjectCannedACL;
+};
+
+const PROFILE_PICTURE_S3_ACL = normalizeS3Acl(process.env.PROFILE_PICTURE_S3_ACL);
+const s3Client = PROFILE_PICTURE_S3_TARGET
+  ? new S3Client({
+      region: PROFILE_PICTURE_S3_REGION,
+      credentials:
+        process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY
+          ? {
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            }
+          : undefined,
+    })
+  : null;
 
 const MAX_FILE_SIZE_BYTES = 250 * 1024; // 250 KB
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png']);
@@ -19,11 +65,32 @@ type UploadResult = {
   strategy: 'local' | 'cloud';
 };
 
-const bufferToArrayBuffer = (buffer: Buffer): ArrayBuffer => {
-  const arrayBuffer = new ArrayBuffer(buffer.length);
-  const view = new Uint8Array(arrayBuffer);
-  view.set(buffer);
-  return arrayBuffer;
+const trimSlashes = (value: string) => value.replace(/^\/+/, '').replace(/\/+$/, '');
+
+const parseS3Target = (target: string) => {
+  const normalized = target?.trim();
+  if (!normalized) {
+    throw new Error('PROFILE_PICTURE_S3_TARGET is not configured.');
+  }
+  const withoutScheme = normalized.replace(/^s3:\/\//, '');
+  const [bucket, ...rest] = withoutScheme.split('/');
+  if (!bucket) {
+    throw new Error('S3 upload target must include a bucket name.');
+  }
+  const prefix = trimSlashes(rest.join('/'));
+  return { bucket, prefix };
+};
+
+const buildS3PublicBase = (bucket: string) => {
+  if (PROFILE_PICTURE_PUBLIC_BASE_URL) {
+    const base = PROFILE_PICTURE_PUBLIC_BASE_URL.trim();
+    const hasProtocol = /^https?:\/\//i.test(base);
+    return hasProtocol ? base : `https://${base}`;
+  }
+  if (!PROFILE_PICTURE_S3_REGION || PROFILE_PICTURE_S3_REGION === 'us-east-1') {
+    return `https://${bucket}.s3.amazonaws.com/`;
+  }
+  return `https://${bucket}.s3.${PROFILE_PICTURE_S3_REGION}.amazonaws.com/`;
 };
 
 const uploadToLocalFilesystem = async (fileName: string, buffer: Buffer): Promise<UploadResult> => {
@@ -34,41 +101,39 @@ const uploadToLocalFilesystem = async (fileName: string, buffer: Buffer): Promis
   return { storedPath: destinationPath, publicUrl, strategy: 'local' };
 };
 
-const uploadToCloudStorage = async (
-  fileName: string,
-  buffer: Buffer,
-  mimeType: string,
-): Promise<UploadResult> => {
-  if (!CLOUD_UPLOAD_ENDPOINT) {
-    throw new Error(
-      'Cloud upload endpoint is not configured. Set PROFILE_PICTURE_CLOUD_UPLOAD_URL in the environment.',
-    );
+const uploadToS3 = async (fileName: string, buffer: Buffer, mimeType: string): Promise<UploadResult> => {
+  if (!PROFILE_PICTURE_S3_TARGET) {
+    throw new Error('S3 upload target is not configured. Set PROFILE_PICTURE_S3_TARGET in the environment.');
+  }
+  if (!s3Client) {
+    throw new Error('S3 uploads are not configured. Set PROFILE_PICTURE_S3_REGION or AWS_REGION.');
   }
 
-  const formData = new FormData();
-  const arrayBuffer = bufferToArrayBuffer(buffer);
-  const blob = new Blob([arrayBuffer], { type: mimeType });
-  formData.append('file', blob, fileName);
+  const { bucket, prefix } = parseS3Target(PROFILE_PICTURE_S3_TARGET);
+  const normalizedPrefix = prefix ? `${prefix}/` : '';
+  const key = `${normalizedPrefix}${fileName}`.replace(/\/\/+/g, '/');
+  const normalizedKey = key.replace(/^\/+/g, '');
 
-  const response = await fetch(CLOUD_UPLOAD_ENDPOINT, {
-    method: 'POST',
-    headers: CLOUD_UPLOAD_API_KEY ? { 'x-api-key': CLOUD_UPLOAD_API_KEY } : undefined,
-    body: formData,
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: buffer,
+    ContentType: mimeType,
+    ...(PROFILE_PICTURE_S3_ACL ? { ACL: PROFILE_PICTURE_S3_ACL } : {}),
   });
 
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(body?.error || 'Failed to upload to cloud storage.');
-  }
+  await s3Client.send(command);
 
-  const location = body?.url || body?.path;
-  if (!location) {
-    throw new Error('Cloud upload response did not include a file location.');
-  }
+  const publicBase = buildS3PublicBase(bucket);
+  const normalizedBase = publicBase.endsWith('/') ? publicBase : `${publicBase}/`;
+  const accessiblePath = PROFILE_PICTURE_PUBLIC_BASE_URL
+    ? fileName.replace(/^\/+/g, '')
+    : normalizedKey;
+  const publicUrl = new URL(accessiblePath, normalizedBase).toString();
 
   return {
-    storedPath: body?.path || location,
-    publicUrl: body?.url || location,
+    storedPath: `s3://${bucket}/${key}`,
+    publicUrl,
     strategy: 'cloud',
   };
 };
@@ -103,7 +168,7 @@ export async function POST(request: Request) {
 
     const uploadResult =
       NODE_ENV === 'production'
-        ? await uploadToCloudStorage(uniqueName, buffer, file.type)
+        ? await uploadToS3(uniqueName, buffer, file.type)
         : await uploadToLocalFilesystem(uniqueName, buffer);
 
     return NextResponse.json({
