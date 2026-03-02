@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const AUTH_COOKIES = ['amb_access_token', 'amb_login_token'];
 const PUBLIC_PATH_PREFIXES = ['/', '/signin', '/signup', '/help', '/forgot-password'];
@@ -10,7 +10,7 @@ function isPublicPath(pathname: string) {
   );
 }
 
-export function middleware(request: NextRequest) {
+export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicPath(pathname)) {
