@@ -56,7 +56,10 @@ export function SigninForm() {
           }
         } catch (e) {}
         const redirectParam = searchParams?.get('redirectTo');
-        const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : '/dashboard';
+        const safeRedirect =
+          redirectParam && redirectParam.startsWith('/') && !redirectParam.startsWith('//')
+            ? redirectParam
+            : '/dashboard';
         router.push(safeRedirect);
       }
     } catch (error: any) {
