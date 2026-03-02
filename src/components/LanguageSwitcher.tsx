@@ -6,8 +6,8 @@ import { useLanguage } from '@/src/i18n/LanguageContext';
 import { Language } from '@/src/i18n/translations';
 
 const languageOptions: Array<{ code: Language; label: string }> = [
-  { code: 'en', label: 'English' },
-  { code: 'fr', label: 'Français' },
+  { code: 'en', label: 'Français' },
+  { code: 'fr', label: 'English' },
 ];
 
 type LanguageSwitcherProps = {
