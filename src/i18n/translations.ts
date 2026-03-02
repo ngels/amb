@@ -34,9 +34,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'signin.signup': 'Sign Up',
     'signin.forgotPassword': 'Forgot Password?',
     'signin.homeLink': 'Go to homepage',
-    'signin.homeLabel': 'Home',
-    'signin.languageLabel': 'Language',
-    'signin.helpLabel': 'Help',
     'signin.helpLink.aria': 'Open the help center in a new tab',
 
     // Forgot Password Page
