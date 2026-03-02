@@ -213,9 +213,10 @@ function DashboardPageContent() {
             setProfiles(profile ? [profile] : []);
             setFullProfileData(profile);
           }
-        } else {
-          setError('Failed to load profiles');
-        }
+        } 
+        // else {
+        //   setError('Failed to load profiles');
+        // }
       } catch (err: any) {
         setError(err?.message || 'Error loading profiles');
       } finally {

@@ -130,6 +130,7 @@ export const translations: Record<Language, Record<string, string>> = {
     // Identification - Steps
     'identification.selectPlaceholder': 'Select...',
     'identification.step1.title': 'Step 1: Personal Information',
+    'identification.step1.picture': 'Profile Picture',
     'identification.step1.firstName': 'Last Name (Nom)',
     'identification.step1.givenName': 'First Names (Prénoms)',
     'identification.step1.givenNameHelper': 'If multiple, separate with commas',
@@ -336,6 +337,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.startIntro': 'Complétez votre identification en remplissant les étapes suivantes.',
 
     // Identification - Steps
+    'identification.step1.picture':'Photo de profil',
     'identification.selectPlaceholder': 'Sélectionner...',
     'identification.step1.title': 'Étape 1 : Informations personnelles',
     'identification.step1.firstName': 'Nom',

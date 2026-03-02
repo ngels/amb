@@ -206,7 +206,7 @@ export default function VoirToutPage() {
         });
 
         if (!res.ok) {
-          setError('Failed to load profiles');
+          // setError('Failed to load profiles');
           setProfiles([]);
           return;
         }
