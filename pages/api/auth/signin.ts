@@ -1,10 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerBaseUrl } from '@/config';
 
-const isProduction = process.env.NODE_ENV === 'production';
 const ONE_DAY_SECONDS = 60 * 60 * 24;
 
-function createCookie(name: string, value: string, maxAgeSeconds = ONE_DAY_SECONDS) {
+type CookieOptions = {
+  maxAgeSeconds?: number;
+  secure?: boolean;
+};
+
+function createCookie(name: string, value: string, options: CookieOptions = {}) {
+  const { maxAgeSeconds = ONE_DAY_SECONDS, secure = false } = options;
   const encoded = encodeURIComponent(value);
   const parts = [
     `${name}=${encoded}`,
@@ -13,7 +18,7 @@ function createCookie(name: string, value: string, maxAgeSeconds = ONE_DAY_SECON
     'HttpOnly',
     'SameSite=Lax',
   ];
-  if (isProduction) {
+  if (secure) {
     parts.push('Secure');
   }
   return parts.join('; ');
@@ -28,6 +33,26 @@ function resolveTokenValue(data: any, keys: string[]) {
     }
   }
   return null;
+}
+
+function isHttpsRequest(req: NextApiRequest) {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  if (forwardedProto) {
+    const value = Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto;
+    if (value) {
+      return value.split(',')[0].trim().toLowerCase() === 'https';
+    }
+  }
+
+  const forwardedHeader = req.headers['forwarded'];
+  if (forwardedHeader) {
+    const value = Array.isArray(forwardedHeader) ? forwardedHeader[0] : forwardedHeader;
+    if (value && value.toLowerCase().includes('proto=https')) {
+      return true;
+    }
+  }
+
+  return Boolean((req.socket as any)?.encrypted);
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -58,6 +83,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const body = await response.json().catch(() => ({}));
     const statusCode = response.status || (body?.status === 'fail' ? 400 : 200);
+    const secureCookiesEnabled = isHttpsRequest(req) || process.env.FORCE_SECURE_COOKIES === 'true';
 
     if (response.ok && body?.data) {
       const cookies: string[] = [];
@@ -65,10 +91,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const loginToken = resolveTokenValue(body.data, ['loginToken', 'login_token', 'login-token']);
 
       if (accessToken) {
-        cookies.push(createCookie('amb_access_token', accessToken));
+        cookies.push(createCookie('amb_access_token', accessToken, { secure: secureCookiesEnabled }));
       }
       if (loginToken) {
-        cookies.push(createCookie('amb_login_token', loginToken));
+        cookies.push(createCookie('amb_login_token', loginToken, { secure: secureCookiesEnabled }));
       }
       if (cookies.length) {
         res.setHeader('Set-Cookie', cookies);
