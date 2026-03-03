@@ -420,7 +420,6 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.step5.secteur': 'Secteur/chefferie',
     'identification.step5.territory': 'Territoire',
     'identification.step5.district': 'District',
-    'identification.step2.selectProvinceFirst': 'Sélectionnez d\'abord une province',
     'identification.step5.province': 'Province',
     'identification.step5.country': 'Pays',
 
