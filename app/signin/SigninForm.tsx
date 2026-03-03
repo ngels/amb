@@ -37,7 +37,11 @@ export function SigninForm() {
 
       const body = await response.json();
       if (!response.ok || body?.status === 'fail') {
-        const message = body?.data?.message || body?.message || t('message.signinError');
+        const backendMessage = body?.data?.message || body?.message || '';
+        const invalidCredsMessages = new Set(['password_incorrect', 'user_not_found']);
+        const message = invalidCredsMessages.has(backendMessage)
+          ? t('message.signinPasswordIncorrect')
+          : backendMessage || t('message.signinError');
         setErrorMessage(message);
       } else {
         setSuccessMessage(t('message.signinSuccess'));
@@ -72,7 +76,7 @@ export function SigninForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-[40rem] bg-white rounded-lg shadow-md p-8">
+      <div className="w-full max-w-[60rem] min-w-[28rem] bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800" data-testid="signin-title">
           {t('signin.title')}
         </h1>
@@ -91,30 +95,37 @@ export function SigninForm() {
 
         <FormikForm initialValues={initialValues} validationSchema={signinSchema} onSubmit={handleSubmit}>
           {(formik) => (
-            <div className="space-y-4">
-              <TextBox
-                name="email"
-                label={t('signin.email')}
-                type="email"
-                placeholder={t('signin.email.placeholder')}
-              />
-              <TextBox
-                name="password"
-                label={t('signin.password')}
-                type="password"
-                placeholder={t('signin.password.placeholder')}
-              />
-              <Button type="submit" label={t('signin.submit')} disabled={formik.isSubmitting} />
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <TextBox
+                  name="email"
+                  label={t('signin.email')}
+                  type="email"
+                  placeholder={t('signin.email.placeholder')}
+                />
+                <TextBox
+                  name="password"
+                  label={t('signin.password')}
+                  type="password"
+                  placeholder={t('signin.password.placeholder')}
+                />
+                <Button type="submit" label={t('signin.submit')} disabled={formik.isSubmitting} />
+                <div className="text-center">
+                  <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
+                    {t('signin.forgotPassword')}
+                  </Link>
+                </div>
+              </div>
+
+              <p className="text-center text-sm text-gray-600">
+                {t('signin.noAccount')}{' '}
+                <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
+                  {t('signin.signup')}
+                </Link>
+              </p>
             </div>
           )}
         </FormikForm>
-
-        <p className="mt-8 text-center text-sm text-gray-600">
-          {t('signin.noAccount')}{' '}
-          <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
-            {t('signin.signup')}
-          </Link>
-        </p>
       </div>
     </div>
   );
