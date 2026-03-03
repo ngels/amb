@@ -1,11 +1,9 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:ap-northeast-3:521806204140:task-definition/ambaRegisfeServiceTaskDefB8E7EF9F:1",
     "containerDefinitions": [
         {
             "name": "web",
-            "image": "nginx",
+            "image": "521806204140.dkr.ecr.ap-northeast-3.amazonaws.com/amb:bcefa2e9f016f9da61be6a3f9704696dd8b2dc53",
             "cpu": 0,
-            "links": [],
             "portMappings": [
                 {
                     "containerPort": 3000,
@@ -14,10 +12,8 @@
                 }
             ],
             "essential": true,
-            "entryPoint": [],
-            "command": [],
             "environment": [
-                {
+                   {
                     "name": "BACKEND_URL",
                     "value": "http://cod-ambcn.registra:5005/api/v1"
                 },
@@ -28,55 +24,47 @@
                   {
                     "name":"NODE_ENV",
                     "value":"production"
-                  },
-                  {
+                  }
+            ],
+            "secrets":[
+                    {
                     "name":"PROFILE_PICTURE_PUBLIC_BASE_URL",
-                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_PUBLIC_BASE_URL"
+                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_PUBLIC_BASE_URL"
                   },
                   {
                     "name":"PROFILE_PICTURE_S3_REGION",
-                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_REGION"
+                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_REGION"
                   },
                   {
                     "name":"PROFILE_PICTURE_S3_TARGET",
-                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_TARGET"
+                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_TARGET"
                   },{
                     "name":"AWS_ACCESS_KEY_ID",
-                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3-KID"
+                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3-KID"
                   },
                   {
                     "name":"AWS_SECRET_ACCESS_KEY",
-                    "value":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3_secret"
+                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3_secret"
                   }
             ],
-            "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
-            "secrets": [],
-            "dnsServers": [],
-            "dnsSearchDomains": [],
-            "extraHosts": [],
-            "dockerSecurityOptions": [],
-            "dockerLabels": {},
-            "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-msBVNxQm9TeA",
+                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-bZbkTEnQc6vS",
                     "awslogs-region": "ap-northeast-3",
                     "awslogs-stream-prefix": "feService"
-                },
-                "secretOptions": []
+                }
             },
-            "systemControls": [],
-            "credentialSpecs": []
+            "systemControls": []
         }
     ],
     "family": "ambaRegisfeServiceTaskDefB8E7EF9F",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-Zpo2bGAtb2dl",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-TFDmoGtrrIdg",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefExecutionRole9AB7D596-HZsEgrt7RG6V",
     "networkMode": "awsvpc",
-    "revision": 1,
+    "revision": 10,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -87,13 +75,16 @@
             "name": "ecs.capability.execution-role-awslogs"
         },
         {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
+            "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
-            "name": "com.amazonaws.ecs.capability.task-iam-role"
+            "name": "ecs.capability.execution-role-ecr-pull"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
@@ -105,15 +96,15 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "MANAGED_INSTANCES",
-        "FARGATE"
+        "FARGATE",
+        "MANAGED_INSTANCES"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-02-28T08:01:52.075Z",
-    "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
+    "registeredAt": "2026-03-02T15:29:01.329Z",
+    "registeredBy": "arn:aws:iam::521806204140:user/gh_deploy",
     "tags": []
 }
