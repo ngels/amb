@@ -59,6 +59,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'message.signupSuccess': 'Sign up successful! Redirecting...',
     'message.signupError': 'Sign up failed. Please try again.',
     'message.signinSuccess': 'Sign in successful! Redirecting...',
+    'message.signinPasswordIncorrect': 'Email or password is incorrect. Please try again or reset it.',
     'message.signinError': 'Sign in failed. Please try again.',
     'message.forgotPasswordSuccess':
       'Reset link sent! Check your email for instructions.',
@@ -131,6 +132,10 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.selectPlaceholder': 'Select...',
     'identification.step1.title': 'Step 1: Personal Information',
     'identification.step1.picture': 'Profile Picture',
+    'identification.step1.pictureHelper': 'Upload a clear passport-style photo (JPG/PNG, max 250 KB).',
+    'identification.step1.picturePreview': 'Preview',
+    'identification.step1.pictureRemove': 'Remove photo',
+    'identification.step1.pictureSavedPreview': 'Saved photo',
     'identification.step1.firstName': 'Last Name (Nom)',
     'identification.step1.givenName': 'First Names (Prénoms)',
     'identification.step1.givenNameHelper': 'If multiple, separate with commas',
@@ -149,7 +154,9 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.step2.group': 'Group (Groupement)',
     'identification.step2.sector': 'Sector/Chiefdom (Secteur/chefferie)',
     'identification.step2.district': 'District',
+    'identification.step2.territory': 'Territory',
     'identification.step2.province': 'Province',
+    'identification.step2.selectProvinceFirst': 'Select a province first',
     'identification.step2.nationality': 'Congolese Nationality (Nationalité congolaise)',
 
     'identification.step3.title': 'Step 3: Social and Educational Status',
@@ -268,6 +275,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'message.signupSuccess': 'Inscription réussie! Redirection en cours...',
     'message.signupError': "L'inscription a échoué. Veuillez réessayer.",
     'message.signinSuccess': 'Connexion réussie! Redirection en cours...',
+    'message.signinPasswordIncorrect': 'E-mail ou mot de passe incorrect. Veuillez réessayer ou le réinitialiser.',
     'message.signinError': 'La connexion a échoué. Veuillez réessayer.',
     'message.forgotPasswordSuccess':
       'Lien de réinitialisation envoyé! Vérifiez votre e-mail pour les instructions.',
@@ -338,6 +346,10 @@ export const translations: Record<Language, Record<string, string>> = {
 
     // Identification - Steps
     'identification.step1.picture':'Photo de profil',
+    'identification.step1.pictureHelper': 'Téléchargez une photo de type passeport nette (JPG/PNG, 250 Ko max).',
+    'identification.step1.picturePreview': 'Aperçu',
+    'identification.step1.pictureRemove': 'Supprimer la photo',
+    'identification.step1.pictureSavedPreview': 'Photo enregistrée',
     'identification.selectPlaceholder': 'Sélectionner...',
     'identification.step1.title': 'Étape 1 : Informations personnelles',
     'identification.step1.firstName': 'Nom',
@@ -356,6 +368,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.step2.tribe': 'Tribu',
     'identification.step2.villageOfOrigin': 'Village d\'origine',
     'identification.step2.group': 'Groupement',
+    'identification.step2.territory': 'Territoire',
     'identification.step2.sector': 'Secteur/chefferie',
     'identification.step2.district': 'District',
     'identification.step2.province': 'Province',
@@ -393,6 +406,7 @@ export const translations: Record<Language, Record<string, string>> = {
     'identification.step5.secteur': 'Secteur/chefferie',
     'identification.step5.territory': 'Territoire',
     'identification.step5.district': 'District',
+    'identification.step2.selectProvinceFirst': 'Sélectionnez d\'abord une province',
     'identification.step5.province': 'Province',
     'identification.step5.country': 'Pays',
 
