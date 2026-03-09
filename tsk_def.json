@@ -1,9 +1,10 @@
 {
     "containerDefinitions": [
         {
-            "name": "web",
-            "image": "521806204140.dkr.ecr.ap-northeast-3.amazonaws.com/amb:bcefa2e9f016f9da61be6a3f9704696dd8b2dc53",
+            "name": "FrontendContainer",
+            "image": "nginx",
             "cpu": 0,
+            "links": [],
             "portMappings": [
                 {
                     "containerPort": 3000,
@@ -12,59 +13,67 @@
                 }
             ],
             "essential": true,
+            "entryPoint": [],
+            "command": [],
             "environment": [
-                   {
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                },
+                {
                     "name": "BACKEND_URL",
                     "value": "http://cod-ambcn.registra:5005/api/v1"
-                },
-                 {
-                     "name": "PROFILE_PICTURE_CLOUD_UPLOAD_API_KEY",
-                     "value": "s3://amb-uploads-img/profileImg/"
-                  },
-                  {
-                    "name":"NODE_ENV",
-                    "value":"production"
-                  }
+                }
             ],
-            "secrets":[
-                    {
-                    "name":"PROFILE_PICTURE_PUBLIC_BASE_URL",
-                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_PUBLIC_BASE_URL"
-                  },
-                  {
-                    "name":"PROFILE_PICTURE_S3_REGION",
-                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_REGION"
-                  },
-                  {
-                    "name":"PROFILE_PICTURE_S3_TARGET",
-                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_TARGET"
-                  },{
-                    "name":"AWS_ACCESS_KEY_ID",
-                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3-KID"
-                  },
-                  {
-                    "name":"AWS_SECRET_ACCESS_KEY",
-                    "valueFrom":"arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3_secret"
-                  }
-            ],
+            "environmentFiles": [],
             "mountPoints": [],
             "volumesFrom": [],
+            "secrets": [
+                {
+                    "name": "PROFILE_PICTURE_PUBLIC_BASE_URL",
+                    "valueFrom": "arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_PUBLIC_BASE_URL"
+                },
+                {
+                    "name": "PROFILE_PICTURE_S3_REGION",
+                    "valueFrom": "arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_REGION"
+                },
+                {
+                    "name": "PROFILE_PICTURE_S3_TARGET",
+                    "valueFrom": "arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/PROFILE_PICTURE_S3_TARGET"
+                },
+                {
+                    "name": "AWS_ACCESS_KEY_ID",
+                    "valueFrom": "arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3-KID"
+                },
+                {
+                    "name": "AWS_SECRET_ACCESS_KEY",
+                    "valueFrom": "arn:aws:ssm:ap-northeast-3:521806204140:parameter/picture/s3_secret"
+                }
+            ],
+            "dnsServers": [],
+            "dnsSearchDomains": [],
+            "extraHosts": [],
+            "dockerSecurityOptions": [],
+            "dockerLabels": {},
+            "ulimits": [],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-feServiceTaskDefwebLogGroup293E8EAD-bZbkTEnQc6vS",
+                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-6IorHuzDn6SY",
                     "awslogs-region": "ap-northeast-3",
-                    "awslogs-stream-prefix": "feService"
-                }
+                    "awslogs-stream-prefix": "frontend"
+                },
+                "secretOptions": []
             },
-            "systemControls": []
+            "systemControls": [],
+            "credentialSpecs": []
         }
     ],
-    "family": "ambaRegisfeServiceTaskDefB8E7EF9F",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefTaskRole7A3626A8-TFDmoGtrrIdg",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-feServiceTaskDefExecutionRole9AB7D596-HZsEgrt7RG6V",
+    "family": "ambaRegisFrontendTaskDef19841295",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-BRnZqKLYd3te",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-um8ICj83cxRr",
     "networkMode": "awsvpc",
-    "revision": 10,
+    "revision": 1,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -75,16 +84,16 @@
             "name": "ecs.capability.execution-role-awslogs"
         },
         {
-            "name": "com.amazonaws.ecs.capability.ecr-auth"
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
         },
         {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.17"
         },
         {
             "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
-            "name": "ecs.capability.execution-role-ecr-pull"
+            "name": "ecs.capability.secrets.ssm.environment-variables"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
@@ -104,7 +113,7 @@
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-03-02T15:29:01.329Z",
-    "registeredBy": "arn:aws:iam::521806204140:user/gh_deploy",
+    "registeredAt": "2026-03-09T08:31:26.334Z",
+    "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
