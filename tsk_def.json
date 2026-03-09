@@ -59,7 +59,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-6IorHuzDn6SY",
+                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-w1Hr1uPvQv4k",
                     "awslogs-region": "ap-northeast-3",
                     "awslogs-stream-prefix": "frontend"
                 },
@@ -70,10 +70,10 @@
         }
     ],
     "family": "ambaRegisFrontendTaskDef19841295",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-BRnZqKLYd3te",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-um8ICj83cxRr",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-vn3cxnL0zDqi",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-SDEYiWQjY17M",
     "networkMode": "awsvpc",
-    "revision": 1,
+    "revision": 4,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -105,15 +105,15 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "FARGATE",
-        "MANAGED_INSTANCES"
+        "MANAGED_INSTANCES",
+        "FARGATE"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-03-09T08:31:26.334Z",
+    "registeredAt": "2026-03-09T12:15:31.499Z",
     "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
