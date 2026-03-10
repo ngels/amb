@@ -2,7 +2,7 @@
     "containerDefinitions": [
         {
             "name": "FrontendContainer",
-            "image": "nginx",
+            "image": "521806204140.dkr.ecr.ap-northeast-3.amazonaws.com/amb:269c1e57b7f44e882bb7d6e1a2a9a436b31adef3",
             "cpu": 0,
             "links": [],
             "portMappings": [
@@ -59,21 +59,31 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-I9CeQ4bL6T1q",
+                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-HpXMbXQ1YdvU",
                     "awslogs-region": "ap-northeast-3",
                     "awslogs-stream-prefix": "frontend"
                 },
                 "secretOptions": []
+            },
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost:3000/ || exit 1"
+                ],
+                "interval": 300,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
             },
             "systemControls": [],
             "credentialSpecs": []
         }
     ],
     "family": "ambaRegisFrontendTaskDef19841295",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-avcKTxIJhzHq",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-xlMqMqMunW3l",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-IuWQRtIjoZxK",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-FaAPnYFLmxHC",
     "networkMode": "awsvpc",
-    "revision": 11,
+    "revision": 13,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -82,6 +92,9 @@
         },
         {
             "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
         },
         {
             "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
@@ -93,6 +106,12 @@
             "name": "com.amazonaws.ecs.capability.task-iam-role"
         },
         {
+            "name": "ecs.capability.container-health-check"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
             "name": "ecs.capability.secrets.ssm.environment-variables"
         },
         {
@@ -100,20 +119,23 @@
         },
         {
             "name": "ecs.capability.task-eni"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
         }
     ],
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "FARGATE",
-        "MANAGED_INSTANCES"
+        "MANAGED_INSTANCES",
+        "FARGATE"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-03-10T07:39:32.599Z",
+    "registeredAt": "2026-03-10T09:08:04.505Z",
     "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
