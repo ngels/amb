@@ -22,7 +22,7 @@
                 },
                 {
                     "name": "BACKEND_URL",
-                    "value": "http://cod-ambcn.registra:5005/api/v1"
+                    "value": "/api/v1"
                 }
             ],
             "environmentFiles": [],
@@ -59,7 +59,7 @@
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
-                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-w1Hr1uPvQv4k",
+                    "awslogs-group": "ambaRegis-FrontendLogGroupCE4F14E0-MBNYUt8nKCl5",
                     "awslogs-region": "ap-northeast-3",
                     "awslogs-stream-prefix": "frontend"
                 },
@@ -70,10 +70,10 @@
         }
     ],
     "family": "ambaRegisFrontendTaskDef19841295",
-    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-vn3cxnL0zDqi",
-    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-SDEYiWQjY17M",
+    "taskRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AmbTaskRoleB81F612F-llYiwNn2I6dE",
+    "executionRoleArn": "arn:aws:iam::521806204140:role/ambaRegis-AppExecutionRoleBDDAF861-jYDL8XVqfsQ2",
     "networkMode": "awsvpc",
-    "revision": 4,
+    "revision": 9,
     "volumes": [],
     "status": "ACTIVE",
     "requiresAttributes": [
@@ -105,15 +105,15 @@
     "placementConstraints": [],
     "compatibilities": [
         "EC2",
-        "MANAGED_INSTANCES",
-        "FARGATE"
+        "FARGATE",
+        "MANAGED_INSTANCES"
     ],
     "requiresCompatibilities": [
         "FARGATE"
     ],
     "cpu": "512",
     "memory": "1024",
-    "registeredAt": "2026-03-09T12:15:31.499Z",
+    "registeredAt": "2026-03-10T05:22:55.977Z",
     "registeredBy": "arn:aws:sts::521806204140:assumed-role/cdk-hnb659fds-cfn-exec-role-521806204140-ap-northeast-3/AWSCloudFormation",
     "tags": []
 }
