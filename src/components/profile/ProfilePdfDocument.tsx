@@ -23,8 +23,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   body: {
+    flex: 1,
     padding: 16,
-    minHeight: '100%',
+    paddingBottom: 100,
   },
   header: {
     justifyContent: 'center',
@@ -51,6 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 6,
+    overflow: 'hidden',
   },
   photoText: {
     fontSize: 10,
@@ -58,6 +60,12 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textTransform: 'uppercase',
     lineHeight: 1.4,
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    borderRadius: 2,
   },
   primarySection: {
     flexDirection: 'row',
@@ -73,7 +81,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   section: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
   separator: {
     height: 1,
@@ -82,7 +90,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   tableSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   tableHeader: {
     backgroundColor: '#e5e7eb',
@@ -139,6 +147,13 @@ const styles = StyleSheet.create({
   },
   groupBlock: {
     marginBottom: 12,
+  },
+  grandparentSection: {
+    marginTop: 12,
+    paddingBottom: 40,
+  },
+  grandparentGroup: {
+    marginBottom: 16,
   },
   footer: {
     position: 'absolute',
@@ -218,15 +233,14 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
   const notProvidedLabel = translateFr('profile.summary.notProvided') || 'Non fourni';
 
   const [primarySection, ...otherSections] = PROFILE_SUMMARY_SECTIONS;
-
-  let fieldCounter = 1;
-  const getNextFieldNumber = () => String(fieldCounter++).padStart(2, '0');
+  const profilePhotoUrl = hasValue(normalizedProfile?.picture) ? normalizedProfile.picture : null;
 
   const renderSection = (
     section: { key: string; titleKey: string; fields: ProfileSummaryField[] },
     options?: { singleColumn?: boolean; useTable?: boolean; skipNumbering?: boolean },
   ) => {
-    const hasContent = section.fields.some((field) => hasValue(getFieldValue(field, normalizedProfile)));
+    const visibleFields = section.fields.filter((field) => field.name !== 'picture');
+    const hasContent = visibleFields.some((field) => hasValue(getFieldValue(field, normalizedProfile)));
     if (!hasContent) return null;
 
     const containerStyle = options?.singleColumn ? styles.singleColumn : styles.grid;
@@ -235,12 +249,11 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
     return (
       <View key={section.key} style={styles.section} wrap={false}>
         <View style={containerStyle}>
-          {section.fields.map((field, index) => {
+          {visibleFields.map((field, index) => {
             const rawValue = getFieldValue(field, normalizedProfile);
             const displayValue = hasValue(rawValue) ? String(rawValue) : notProvidedLabel;
-            const numberPrefix = options?.skipNumbering ? null : getNextFieldNumber();
             const labelText = formatLabel(translateFr(field.labelKey) || field.labelKey);
-            const labeledField = numberPrefix ? `${numberPrefix} ${labelText}` : labelText;
+            const labeledField = labelText;
 
             if (options?.useTable) {
               const rowStyle = index % 2 === 0 ? styles.tableRow : [styles.tableRow, styles.tableRowAlt];
@@ -274,12 +287,14 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
     grandmotherTitleKey: string,
     grandfather: Record<string, any> | null | undefined,
     grandmother: Record<string, any> | null | undefined,
+    options?: { breakBefore?: boolean },
   ) => {
     const hasGroupContent = hasGrandparentInfo(grandfather) || hasGrandparentInfo(grandmother);
     if (!hasGroupContent) return null;
+    const breakBefore = options?.breakBefore ?? false;
 
     return (
-      <View key={groupTitleKey} wrap={false}>
+      <View key={groupTitleKey} style={styles.grandparentGroup} wrap={false} break={breakBefore}>
         {renderGrandparentDetails(grandfather, grandfatherTitleKey, notProvidedLabel)}
         {renderGrandparentDetails(grandmother, grandmotherTitleKey, notProvidedLabel)}
       </View>
@@ -308,11 +323,15 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
               <View style={styles.primaryFields}>{renderSection(primarySection, { singleColumn: true, useTable: true })}</View>
               <View style={styles.photoWrapper}>
                 <View style={styles.photoPlaceholder}>
-                  <Text style={styles.photoText}>
-                    Photo 4x4 cm
-                    {'\n'}
-                    Fond blanc
-                  </Text>
+                  {profilePhotoUrl ? (
+                    <Image src={profilePhotoUrl} style={styles.photoImage} />
+                  ) : (
+                    <Text style={styles.photoText}>
+                      Photo 4x4 cm
+                      {'\n'}
+                      Fond blanc
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -324,26 +343,35 @@ export const ProfilePdfDocument: React.FC<ProfilePdfDocumentProps> = ({ profile 
             </View>
           ))}
 
-          {shouldRenderGrandparents && <View break />}
-
-          {shouldRenderGrandparents && (
-            <View wrap={false}>
-              {renderGrandparentGroup(
+          {shouldRenderGrandparents && (() => {
+            const groups: React.ReactNode[] = [];
+            if (hasPaternalGrandparents) {
+              const group = renderGrandparentGroup(
                 'identification.step5.block1',
                 'identification.step5.block1.section1',
                 'identification.step5.block1.section2',
                 normalizedProfile?.grandpere_pere,
                 normalizedProfile?.grandmere_pere,
-              )}
-              {renderGrandparentGroup(
+              );
+              if (group) groups.push(group);
+            }
+            if (hasMaternalGrandparents) {
+              const group = renderGrandparentGroup(
                 'identification.step5.block2',
                 'identification.step5.block2.section1',
                 'identification.step5.block2.section2',
                 normalizedProfile?.grandpere_mere,
                 normalizedProfile?.grandmere_mere,
-              )}
-            </View>
-          )}
+                { breakBefore: groups.length > 0 },
+              );
+              if (group) groups.push(group);
+            }
+            return groups.length ? (
+              <View style={styles.grandparentSection} break>
+                {groups}
+              </View>
+            ) : null;
+          })()}
 
           <View style={styles.footer} fixed>
             <Text style={styles.footerText}>Fiche d'identification</Text>
